@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light only">
+    <title>Drishti - CNC Production</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Noto+Sans+Gujarati:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f4f7f9;
+            --surface: #ffffff;
+            --surface2: #f0f3fa;
+            --border: #dde3f0;
+            --text: #1a202c;
+            --text-muted: #6b7280;
+            --cnc-bg: #f4f7f9;
+            --cnc-card: #ffffff;
+            --cnc-accent: #1a73e8;
+            --cnc-accent2: #e67e22;
+            --muted: #666;
+            --danger: #e74c3c;
+            --success: #27ae60;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; color-scheme: light only; }
+        @media (prefers-color-scheme: dark) {
+            body { background: #f4f7f9 !important; color: #1a202c !important; }
+            input, select { background: #f0f3fa !important; color: #1a202c !important; }
+        }
+        body { font-family: 'Noto Sans Gujarati', 'Segoe UI', 'Rajdhani', sans-serif; background: var(--cnc-bg); color: var(--text); min-height: 100vh; }
+
+        #cncApp { padding-bottom: 75px; min-height: 100vh; background: var(--cnc-bg); }
+        .cnc-header { background: var(--cnc-accent); color: white; padding: 12px 16px 10px; display: flex; justify-content: space-between; align-items: center; }
+        .cnc-header-center { flex: 1; text-align: center; }
+        .cnc-header h1 { margin: 0; font-size: 16px; letter-spacing: 0.5px; }
+        .cnc-header p { margin: 2px 0 0; font-size: 11px; opacity: 0.8; }
+        .container { padding: 12px; max-width: 900px; margin: auto; }
+        .cnc-card { background: var(--cnc-card); border-radius: 12px; padding: 15px; margin-bottom: 14px; border: 1px solid var(--border); box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+        #cncApp h2 { font-size: 16px; color: var(--cnc-accent); border-left: 4px solid var(--cnc-accent); padding-left: 10px; margin: 0 0 14px; }
+        #cncApp h3 { font-size: 14px; color: var(--muted); margin: 0 0 10px; }
+        #cncApp label { font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px; color: var(--muted); }
+        #cncApp input, #cncApp select { width: 100%; padding: 8px 10px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; background: #fafafa; transition: border 0.2s; }
+        #cncApp input:focus, #cncApp select:focus { border-color: var(--cnc-accent); outline: none; background: #fff; }
+        #cncApp input[readonly] { background: #f0f0f0; color: var(--muted); }
+        .cnc-btn { padding: 12px 16px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; width: 100%; }
+        .cnc-btn-primary { background: var(--cnc-accent); color: white; }
+        .cnc-btn-success { background: var(--success); color: white; }
+        .cnc-btn-orange { background: var(--cnc-accent2); color: white; }
+        .cnc-btn-grey { background: #6c757d; color: white; }
+        .cnc-btn-sm { padding: 4px 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold; width: auto; }
+        .cnc-btn-del { color: var(--danger); border: 1px solid var(--danger); background: none; padding: 4px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        .cnc-btn-edit { color: var(--cnc-accent); border: 1px solid var(--cnc-accent); background: none; padding: 4px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        .cnc-btn:active { opacity: 0.85; }
+        .row { display: flex; gap: 10px; }
+        .row > div { flex: 1; }
+        .cnc-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: #fff; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); box-shadow: 0 -2px 8px rgba(0,0,0,0.06); }
+        .cnc-nav-btn { background: none; border: none; color: #aaa; font-size: 11px; text-align: center; flex: 1; cursor: pointer; padding: 5px 0; }
+        .cnc-nav-btn span { font-size: 22px; display: block; }
+        .cnc-nav-btn.active { color: var(--cnc-accent); font-weight: bold; }
+        .table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 14px; }
+        #cncApp table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; min-width: 480px; }
+        #cncApp th { background: #2c3e50; color: white; padding: 9px 6px; white-space: nowrap; }
+        #cncApp td { padding: 8px 6px; border-bottom: 1px solid #f0f0f0; background: #fff; }
+        #cncApp tr:last-child td { border-bottom: none; }
+        .summary-header td { background: #eef3fb; font-weight: bold; color: var(--cnc-accent); font-size: 12px; }
+        .leave-row td { background: #fff8f0; color: #c0392b; font-style: italic; }
+        .total-box { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; margin-bottom: 12px; font-size: 15px; }
+        .cnc-content-section { display: none; }
+        .cnc-content-section.active { display: block; }
+        .divider { height: 1px; background: var(--border); margin: 10px 0 14px; }
+        .badge { display: inline-block; background: var(--cnc-accent); color: white; border-radius: 12px; font-size: 10px; padding: 2px 7px; margin-left: 4px; vertical-align: middle; }
+        .badge-green { background: var(--success); }
+        .master-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 4px; border-bottom: 1px solid #f0f0f0; font-size: 13px; gap: 8px; }
+        .master-item:last-child { border-bottom: none; }
+        .master-item-info { flex: 1; }
+        .master-item-btns { display: flex; gap: 5px; flex-shrink: 0; }
+        .pdf-range { background: #eef3fb; border-radius: 8px; padding: 12px; margin-top: 10px; }
+        .pdf-range label { color: var(--cnc-accent); }
+        .btn-teal { background: #17a2b8; color: white; }
+        .date-strip { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+        .date-nav-btn { background: var(--cnc-accent); color: white; border: none; border-radius: 8px; padding: 9px 13px; font-size: 17px; cursor: pointer; flex-shrink: 0; line-height: 1; }
+        .date-strip input[type="date"] { flex: 1; margin-bottom: 0; font-size: 13px; padding: 9px 8px; }
+        .compact-row { display: grid; grid-template-columns: 1fr 1fr 0.7fr 0.8fr; gap: 6px; margin-bottom: 4px; }
+        .compact-row label { font-size: 10px; margin-bottom: 2px; }
+        .compact-row input, .compact-row select { padding: 7px 6px; font-size: 12px; margin-bottom: 0; }
+        .day-total-box { background: linear-gradient(135deg,#27ae60,#2ecc71); color: white; padding: 10px; border-radius: 8px; font-weight: bold; text-align: center; margin-bottom: 12px; font-size: 14px; display: none; }
+        .item-entry-row { background: #f8faff; border: 1px solid #d0e3ff; border-radius: 10px; padding: 11px; margin-bottom: 10px; position: relative; }
+        .item-entry-row .remove-item-btn { position: absolute; top: 8px; right: 8px; background: var(--danger); color: white; border: none; border-radius: 6px; padding: 3px 8px; font-size: 12px; cursor: pointer; }
+        .gen-entry-row { background: #f0fdf4; border: 1px solid #a8d5b5; border-radius: 10px; padding: 11px; margin-bottom: 10px; position: relative; }
+        .gen-entry-row .remove-gen-btn { position: absolute; top: 8px; right: 8px; background: var(--danger); color: white; border: none; border-radius: 6px; padding: 3px 8px; font-size: 12px; cursor: pointer; }
+        .gen-entry-row .gen-row-label { font-size: 11px; font-weight: 700; color: var(--success); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .calc-preview { background: #e8f5e9; border-radius: 6px; padding: 8px; font-size: 12px; color: #1a7a3a; font-weight: bold; margin-top: 2px; margin-bottom: 8px; text-align: center; display: none; }
+        .gen-preview-row { background: #fff3cd; border-radius: 6px; padding: 8px; font-size: 12px; color: #856404; font-weight: bold; text-align: center; margin-top: 2px; margin-bottom: 0; display: none; }
+        .row2 { display: flex; gap: 8px; }
+        .row2 > div { flex: 1; min-width: 0; }
+        .leave-badge { display: inline-block; background: #e74c3c; color: white; border-radius: 6px; font-size: 11px; padding: 2px 8px; }
+        .ss-wrap { position: relative; margin-bottom: 8px; }
+        .ss-input { width: 100%; padding: 11px 12px 11px 34px; border: 1.5px solid #ccc; border-radius: 8px; font-size: 14px; background: #fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%231a73e8' stroke-width='2.5'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center; box-sizing: border-box; transition: border 0.2s; }
+        .ss-input:focus { border-color: var(--cnc-accent); outline: none; background-color: #fff; }
+        .ss-list { display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1.5px solid var(--cnc-accent); border-top: none; border-radius: 0 0 10px 10px; max-height: 200px; overflow-y: auto; z-index: 9999; box-shadow: 0 6px 18px rgba(0,0,0,0.13); }
+        .ss-item { padding: 11px 13px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f2f2f2; }
+        .ss-item:last-child { border-bottom: none; }
+        .ss-item:hover, .ss-item:active { background: #eef3ff; color: var(--cnc-accent); font-weight: 600; }
+        .ss-item.ss-empty { color: #aaa; font-style: italic; cursor: default; }
+        .ss-item.ss-empty:hover { background: none; color: #aaa; font-weight: 400; }
+        .cnc-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .cnc-modal-overlay.active { display: flex; }
+        .cnc-modal { background: white; border-radius: 14px; padding: 20px; width: 90%; max-width: 400px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
+        .cnc-modal h3 { margin: 0 0 15px; color: var(--cnc-accent); font-size: 15px; }
+        .cnc-modal-btns { display: flex; gap: 10px; margin-top: 5px; }
+        .cnc-modal-btns button { flex: 1; }
+    </style>
+</head>
+<body>
+
+<div id="cncApp">
+    <div class="cnc-header">
+        <div class="cnc-header-center">
+            <h1>🔩 CNC Production</h1>
+            <p>Drishti Flanges & Metal</p>
+        </div>
+        
+    </div>
+
+    <div class="container">
+        <!-- ENTRY SECTION -->
+        <div id="cnc_entry" class="cnc-content-section active">
+            <h2 style="margin-top:12px;">📝 Daily Entry</h2>
+            <div class="cnc-card">
+                <div class="date-strip">
+                    <button class="date-nav-btn" onclick="cncChangeDate(-1)">&#8249;</button>
+                    <input type="date" id="entryDate" onchange="loadDayTotal()">
+                    <button class="date-nav-btn" onclick="cncChangeDate(1)">&#8250;</button>
+                </div>
+                <label>&#128119; Operator</label>
+                <select id="entryOperator" style="margin-bottom:10px;"><option value="">-- Select Operator --</option></select>
+                <div class="compact-row">
+                    <div><label>In Time</label><input type="time" id="cncInTime"></div>
+                    <div><label>Out Time</label><input type="time" id="cncOutTime"></div>
+                    <div><label>Break(Hr)</label><input type="number" id="cncBreakTime" step="0.1" value="0" placeholder="0"></div>
+                    <div>
+                        <label>Leave</label>
+                        <select id="cncLeaveSelect">
+                            <option value="">--</option>
+                            <option value="Personal Leave">Personal</option>
+                            <option value="Holiday Leave">Holiday</option>
+                            <option value="Sick Leave">Sick</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div id="itemEntriesContainer"></div>
+            <button class="cnc-btn cnc-btn-primary" onclick="addItemEntryRow()" style="margin-bottom:12px;">➕ Add Item</button>
+            <div id="genEntriesContainer"></div>
+            <button class="cnc-btn btn-teal" onclick="addGenEntryRow()" style="margin-bottom:12px;">🔧 Add General Work</button>
+            <button class="cnc-btn cnc-btn-success" id="btnSave">&#128190; Save Daily Record</button>
+        </div>
+
+        <!-- REPORT SECTION -->
+        <div id="cnc_report" class="cnc-content-section">
+            <h2 style="margin-top:12px;">📊 Report & Summary</h2>
+            <div class="cnc-card">
+                <h3>Date Range Filter</h3>
+                <div class="row">
+                    <div><label>From</label><input type="date" id="repFrom"></div>
+                    <div><label>To</label><input type="date" id="repTo"></div>
+                </div>
+                <label>👷 Operator Filter</label>
+                <select id="repOperator"><option value="">-- All Operators --</option></select>
+                <button onclick="loadReport()" class="cnc-btn cnc-btn-primary">🔍 View Report</button>
+            </div>
+            <div id="grandTotalDisplay" class="total-box" style="display:none;">Grand Total: ₹ 0.00</div>
+            <div id="reportTablesContainer">
+                <div class="table-wrapper">
+                    <table id="dailyTable">
+                        <thead><tr><th>Date</th><th>Description</th><th>Cyc(s)</th><th>Qty</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Action</th></tr></thead>
+                        <tbody id="reportData"><tr><td colspan="9" style="color:var(--muted); padding:20px;">Select a date range and tap View Report</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="cnc-card">
+                <h3>📋 Category Summary</h3>
+                <div class="table-wrapper" style="margin-bottom:0;">
+                    <table>
+                        <thead><tr><th>Category</th><th>Description</th><th>Total</th></tr></thead>
+                        <tbody id="summaryData"><tr><td colspan="3" style="color:var(--muted); padding:15px;">Load report to see summary</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="cnc-card">
+                <h3>📥 Download PDF Report</h3>
+                <p style="font-size:12px; color:var(--muted); margin:0 0 10px;">Production અને Leave/Break માટે અલગ-અલગ મહિનો અને A/B પસંદ કરો.</p>
+                <div class="pdf-range">
+                    <label>👷 Operator</label>
+                    <select id="pdfOperator" style="margin-bottom:12px;"><option value="">-- Select --</option><option value="__ALL__">👥 All Operators (બધા ઓપરેટર)</option></select>
+
+                    <div style="background:#fff; border:1px solid #d0e3ff; border-radius:8px; padding:10px; margin-bottom:10px;">
+                        <div style="font-weight:700; color:#1a73e8; font-size:12px; margin-bottom:8px;">⚙️ Production સમય</div>
+                        <div class="row">
+                            <div>
+                                <label>📅 મહિનો</label>
+                                <select id="pdfProdMonth">
+                                    <option value="01">Jan</option><option value="02">Feb</option>
+                                    <option value="03">Mar</option><option value="04">Apr</option>
+                                    <option value="05">May</option><option value="06">Jun</option>
+                                    <option value="07">Jul</option><option value="08">Aug</option>
+                                    <option value="09">Sep</option><option value="10">Oct</option>
+                                    <option value="11">Nov</option><option value="12">Dec</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>📆 વર્ષ</label>
+                                <input type="number" id="pdfProdYear" value="2025" min="2020" max="2099">
+                            </div>
+                            <div>
+                                <label>🔤 A / B</label>
+                                <select id="pdfProdAB">
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="AB">A,B (આખો મહિનો)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Hidden date inputs for compatibility -->
+                        <input type="hidden" id="pdfProdFrom"><input type="hidden" id="pdfProdTo">
+                    </div>
+
+                    <div style="background:#fff; border:1px solid #a8d5b5; border-radius:8px; padding:10px; margin-bottom:4px;">
+                        <div style="font-weight:700; color:#27ae60; font-size:12px; margin-bottom:8px;">🏖️ Leave / Break સમય</div>
+                        <div class="row">
+                            <div>
+                                <label>📅 મહિનો</label>
+                                <select id="pdfLeaveMonth">
+                                    <option value="01">Jan</option><option value="02">Feb</option>
+                                    <option value="03">Mar</option><option value="04">Apr</option>
+                                    <option value="05">May</option><option value="06">Jun</option>
+                                    <option value="07">Jul</option><option value="08">Aug</option>
+                                    <option value="09">Sep</option><option value="10">Oct</option>
+                                    <option value="11">Nov</option><option value="12">Dec</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>📆 વર્ષ</label>
+                                <input type="number" id="pdfLeaveYear" value="2025" min="2020" max="2099">
+                            </div>
+                            <div>
+                                <label>🔤 A / B</label>
+                                <select id="pdfLeaveAB">
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="AB">A,B (આખો મહિનો)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Hidden date inputs for compatibility -->
+                        <input type="hidden" id="pdfLeaveFrom"><input type="hidden" id="pdfLeaveTo">
+                    </div>
+                </div>
+                <button onclick="generateAdvancedPDFFromSelectors()" class="cnc-btn cnc-btn-orange" style="margin-top:10px;">📄 Generate & Download PDF</button>
+            </div>
+        </div>
+
+        <!-- SETTINGS SECTION -->
+        <div id="cnc_settings" class="cnc-content-section">
+            <h2 style="margin-top:12px;">⚙️ Settings</h2>
+            <div class="cnc-card">
+                <h3>👷 Operators</h3>
+                <label>Operator Name</label>
+                <input type="text" id="mOperatorName" placeholder="e.g. Krushndevbhai">
+                <button class="cnc-btn cnc-btn-primary" onclick="addOperator()">➕ Add Operator</button>
+                <div class="divider"></div>
+                <div id="masterOperatorList"><p style="color:var(--muted); font-size:13px;">No operators added yet.</p></div>
+            </div>
+            <div class="cnc-card">
+                <h3>⚙️ Production Items</h3>
+                <label>Machine</label>
+                <select id="mItemMachine" style="margin-bottom:6px;">
+                    <option value="CNC">CNC</option>
+                    <option value="Drill">Drill</option>
+                </select>
+                <label>Item Name</label>
+                <input type="text" id="mItemName" placeholder="e.g. Flange 4-inch">
+                <input type="hidden" id="mItemRate" value="0">
+                <button class="cnc-btn cnc-btn-primary" onclick="addItemMaster()">➕ Add Item</button>
+                <div class="divider"></div>
+                <div id="masterItemList"><p style="color:var(--muted); font-size:13px;">No items added yet.</p></div>
+            </div>
+            <div class="cnc-card">
+                <h3>🛠️ General Work Types</h3>
+                <label>Work Name</label>
+                <input type="text" id="mGenName" placeholder="e.g. Cleaning, Maintenance">
+                <button class="cnc-btn cnc-btn-grey" onclick="addGenMaster()">➕ Add Work Type</button>
+                <div class="divider"></div>
+                <div id="masterGenList"><p style="color:var(--muted); font-size:13px;">No work types added yet.</p></div>
+            </div>
+
+            <!-- ── Firebase Config Card removed ── -->
+        </div>
+    </div>
+
+    <!-- CNC Bottom Nav -->
+    <div class="cnc-bottom-nav">
+        <button class="cnc-nav-btn active" onclick="cncShowTab('cnc_entry', this)"><span>📝</span>Entry</button>
+        <button class="cnc-nav-btn" onclick="cncShowTab('cnc_report', this)"><span>📊</span>Report</button>
+        <button class="cnc-nav-btn" onclick="cncShowTab('cnc_settings', this)"><span>⚙️</span>Settings</button>
+    </div>
+
+    <!-- Edit Item Modal -->
+    <div class="cnc-modal-overlay" id="editModal">
+        <div class="cnc-modal">
+            <h3>✏️ Edit Item</h3>
+            <input type="hidden" id="editItemId">
+            <label>Item Name</label>
+            <input type="text" id="editItemName" placeholder="Item Name">
+            <input type="hidden" id="editItemRate" value="0">
+            <div class="cnc-modal-btns">
+                <button class="cnc-btn cnc-btn-primary" onclick="saveEditItem()">💾 Save</button>
+                <button class="cnc-btn cnc-btn-grey" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Gen Work Modal -->
+    <div class="cnc-modal-overlay" id="editGenModal">
+        <div class="cnc-modal">
+            <h3>✏️ Edit General Work</h3>
+            <input type="hidden" id="editGenId">
+            <label>Work Name</label>
+            <input type="text" id="editGenName" placeholder="Work Name">
+            <div class="cnc-modal-btns">
+                <button class="cnc-btn cnc-btn-primary" onclick="saveEditGen()">💾 Save</button>
+                <button class="cnc-btn cnc-btn-grey" onclick="closeEditGenModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Entry Modal -->
+    <div class="cnc-modal-overlay" id="editEntryModal">
+        <div class="cnc-modal" style="max-height:90vh;overflow-y:auto;">
+            <h3>✏️ Edit Entry</h3>
+            <input type="hidden" id="editEntryId">
+            <input type="hidden" id="editEntryType">
+            <label>Date</label><input type="date" id="editEntryDate" style="margin-bottom:10px;">
+            <div class="row2" style="margin-bottom:10px;">
+                <div><label>In Time</label><input type="time" id="editInTime" style="margin-bottom:0;"></div>
+                <div><label>Out Time</label><input type="time" id="editOutTime" style="margin-bottom:0;"></div>
+            </div>
+            <div id="editItemSection" style="display:none;">
+                <label>Item</label>
+                <input type="text" id="editEntryItemName" style="margin-bottom:10px;">
+                <label>Cycle Time</label>
+                <div class="row2">
+                    <div><label style="font-size:10px;">Minute</label><input type="number" id="editCycleMin" min="0" placeholder="0" oninput="calcEditCycle()"></div>
+                    <div><label style="font-size:10px;">Second</label><input type="number" id="editCycleSec" min="0" max="59" placeholder="0" oninput="calcEditCycle()"></div>
+                </div>
+                <div class="calc-preview" id="editCyclePreview"></div>
+                <label>Qty (Pieces)</label><input type="number" id="editItemQty">
+                <label>Notes (Optional)</label>
+                <input type="text" id="editItemNotes" placeholder="e.g. Special order, rework...">
+            </div>
+            <div id="editGenSection" style="display:none;">
+                <label>Work Name</label>
+                <div class="ss-wrap" id="ssEditGenWrap" style="margin-bottom:10px;">
+                    <input class="ss-input" type="text" id="editGenWorkName" placeholder="🔍 Work type ટાઇપ કરો..." autocomplete="off"
+                        oninput="ssFilterEditGen()" onfocus="ssShowEditGen()">
+                    <div class="ss-list" id="ssEditGenList"></div>
+                </div>
+                <label>Hours <span style="font-size:10px;color:#888;font-weight:400;">(e.g. 1.5 = 1hr 30min)</span></label>
+                <input type="number" id="editGenHrs" step="0.1" min="0" placeholder="e.g. 1.5" oninput="calcEditGenPreview()">
+                <div class="gen-preview-row" id="editGenPreview" style="display:none;"></div>
+                <label style="margin-top:6px;">Notes (Optional)</label>
+                <input type="text" id="editGenNotes" placeholder="e.g. Machine cleaning...">
+            </div>
+            <div id="editLeaveSection" style="display:none;">
+                <label>Leave Type</label>
+                <select id="editLeaveSel" style="margin-bottom:10px;">
+                    <option value="Personal Leave">Personal Leave</option>
+                    <option value="Holiday Leave">Holiday Leave</option>
+                    <option value="Sick Leave">Sick Leave</option>
+                </select>
+            </div>
+            <div class="cnc-modal-btns">
+                <button class="cnc-btn cnc-btn-primary" onclick="saveEditEntry()">💾 Save Changes</button>
+                <button class="cnc-btn cnc-btn-grey" onclick="closeEditEntryModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    window.cncShowTab = (id, btn) => {
+        document.querySelectorAll('.cnc-content-section').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.cnc-nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    };
+</script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+    // Check if user has saved a custom Firebase config
+    let _savedCfg = null;
+    try { _savedCfg = JSON.parse(localStorage.getItem('cncFirebaseCfg') || 'null'); } catch(e) {}
+
+    // CNC App Firebase (ketanattendance)
+    const cncFirebaseConfig = _savedCfg || {
+        apiKey: "AIzaSyBrxfsTlCslLhL9CZsa5sXIJFv9QpghG7U",
+        authDomain: "ketanattendance.firebaseapp.com",
+        databaseURL: "https://ketanattendance-default-rtdb.firebaseio.com",
+        projectId: "ketanattendance",
+        storageBucket: "ketanattendance.firebasestorage.app",
+        messagingSenderId: "740973796163",
+        appId: "1:740973796163:web:2f21601e0615edf0b52df6"
+    };
+
+    const cncApp = initializeApp(cncFirebaseConfig, "cncApp");
+    const cncDb = getFirestore(cncApp);
+    window.db = cncDb;
+    window.fLib = { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where };
+
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+    // Init CNC app dates when opened
+    window.cncAppReady = () => {
+        document.getElementById('repFrom').value = firstDay;
+        document.getElementById('repTo').value = lastDay;
+        // Set month/year selectors to current month
+        const curMonth = String(now.getMonth() + 1).padStart(2, '0');
+        const curYear = now.getFullYear();
+        ['pdfProdMonth','pdfLeaveMonth'].forEach(id => { const el = document.getElementById(id); if(el) el.value = curMonth; });
+        ['pdfProdYear','pdfLeaveYear'].forEach(id => { const el = document.getElementById(id); if(el) el.value = curYear; });
+        window.syncData();
+        setTimeout(() => { if (window.syncOperators) window.syncOperators(); }, 600);
+    };
+
+    // ── Current config values (for display) ──
+    const _currentCncConfig = { ...cncFirebaseConfig };
+
+    window.loadCncFirebaseConfigToUI = () => {
+        document.getElementById('fb_apiKey').value            = _currentCncConfig.apiKey            || '';
+        document.getElementById('fb_authDomain').value        = _currentCncConfig.authDomain        || '';
+        document.getElementById('fb_databaseURL').value       = _currentCncConfig.databaseURL       || '';
+        document.getElementById('fb_projectId').value         = _currentCncConfig.projectId         || '';
+        document.getElementById('fb_storageBucket').value     = _currentCncConfig.storageBucket     || '';
+        document.getElementById('fb_messagingSenderId').value = _currentCncConfig.messagingSenderId || '';
+        document.getElementById('fb_appId').value             = _currentCncConfig.appId             || '';
+        const st = document.getElementById('fb_status');
+        st.style.display = 'block';
+        st.style.color = '#1a73e8';
+        st.textContent = '✅ Current config loaded — ઉપર fields ભરેલા છે.';
+    };
+
+    window.saveCncFirebaseConfig = () => {
+        const cfg = {
+            apiKey:            document.getElementById('fb_apiKey').value.trim(),
+            authDomain:        document.getElementById('fb_authDomain').value.trim(),
+            databaseURL:       document.getElementById('fb_databaseURL').value.trim(),
+            projectId:         document.getElementById('fb_projectId').value.trim(),
+            storageBucket:     document.getElementById('fb_storageBucket').value.trim(),
+            messagingSenderId: document.getElementById('fb_messagingSenderId').value.trim(),
+            appId:             document.getElementById('fb_appId').value.trim(),
+        };
+        if (!cfg.apiKey || !cfg.projectId || !cfg.appId) {
+            alert("⚠️ API Key, Project ID અને App ID ભરવા જરૂરી છે.");
+            return;
+        }
+        // Save to localStorage so it persists across reloads
+        localStorage.setItem('cncFirebaseCfg', JSON.stringify(cfg));
+        const st = document.getElementById('fb_status');
+        st.style.display = 'block';
+        st.style.color = '#27ae60';
+        st.textContent = '✅ Config save થઈ ગઈ! Page reload થઈ રહ્યું છે...';
+        setTimeout(() => location.reload(), 1200);
+    };
+
+    // Auto-init on page load
+    window.cncAppReady();
+</script>
+
+<script>
+    let items_db = [];
+    let gens_db = [];
+    window.operators_db = [];
+    const GEN_RATE = 38.33;
+    const DELETE_PASS = "0000";
+
+    window.syncOperators = async () => {
+        if (!window.fLib) return setTimeout(window.syncOperators, 500);
+        const snap = await window.fLib.getDocs(window.fLib.collection(window.db, "operators"));
+        const ops = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name));
+        window.operators_db = ops;
+
+        const optHtml = '<option value="">-- Select Operator --</option>' + ops.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
+        const entryOpEl = document.getElementById('entryOperator');
+        if (entryOpEl) entryOpEl.innerHTML = optHtml;
+
+        const repOpEl = document.getElementById('repOperator');
+        if (repOpEl) repOpEl.innerHTML = '<option value="">-- All Operators --</option>' + ops.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
+
+        const pdfOpEl = document.getElementById('pdfOperator');
+        if (pdfOpEl) {
+            const prevPdfOp = pdfOpEl.value;
+            pdfOpEl.innerHTML = '<option value="">-- Select --</option><option value="__ALL__">👥 All Operators (બધા ઓપરેટર)</option>' + ops.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
+            if (prevPdfOp && [...pdfOpEl.options].some(o => o.value === prevPdfOp)) pdfOpEl.value = prevPdfOp;
+            else pdfOpEl.value = '__ALL__';
+        }
+
+        const masterOpList = document.getElementById('masterOperatorList');
+        if (masterOpList) {
+            masterOpList.innerHTML = ops.length
+                ? ops.map(op => `<div class="master-item">
+                    <div class="master-item-info"><strong>${op.name}</strong></div>
+                    <div class="master-item-btns"><button class="cnc-btn-del" onclick="deleteOperator('${op.id}')">Delete</button></div>
+                </div>`).join('')
+                : '<p style="color:var(--muted); font-size:13px;">No operators added yet.</p>';
+        }
+    };
+
+    window.addOperator = async () => {
+        const n = document.getElementById('mOperatorName').value.trim();
+        if (!n) return alert("Operator નું નામ ભરો.");
+        await window.fLib.addDoc(window.fLib.collection(window.db, "operators"), { name: n });
+        document.getElementById('mOperatorName').value = "";
+        window.syncOperators();
+    };
+
+    window.deleteOperator = async (id) => {
+        if (confirm("આ Operator delete કરવો છો?")) {
+            await window.fLib.deleteDoc(window.fLib.doc(window.db, "operators", id));
+            window.syncOperators();
+        }
+    };
+
+    window.cncChangeDate = (delta) => {
+        const inp = document.getElementById('entryDate');
+        let d;
+        if (inp.value) {
+            const [y, m, day] = inp.value.split('-').map(Number);
+            d = new Date(y, m - 1, day);
+        } else {
+            d = new Date();
+        }
+        d.setDate(d.getDate() + delta);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        inp.value = `${yyyy}-${mm}-${dd}`;
+        loadDayTotal();
+    };
+
+    window.loadDayTotal = async () => {
+        if (!window.fLib || !window.db) return;
+        const date = document.getElementById('entryDate').value;
+        if (!date) return;
+        try {
+            const snap = await window.fLib.getDocs(
+                window.fLib.query(window.fLib.collection(window.db, "production_entries"), window.fLib.where("date", "==", date))
+            );
+            const total = snap.docs.reduce((s, d) => s + parseFloat(d.data().amt || 0), 0);
+            const box = document.getElementById('dayTotalBox');
+            if (box) { if (total > 0) { box.style.display = 'block'; box.innerHTML = `📅 ${date} ની કુલ આવક: ₹${total.toFixed(2)}`; } else box.style.display = 'none'; }
+        } catch (e) {}
+    };
+
+    let itemRowCount = 0, genRowCount = 0;
+
+    window.calcRowCycle = rowId => {
+        const mins = parseFloat(document.getElementById(`cycleMin_${rowId}`).value || 0);
+        const secs = parseFloat(document.getElementById(`cycleSec_${rowId}`).value || 0);
+        const total = (mins * 60) + secs;
+        document.getElementById(`cycleTotal_${rowId}`).value = total;
+        const prev = document.getElementById(`cyclePreview_${rowId}`);
+        if (total > 0) {
+            const mPart = mins > 0 ? `${mins}m ` : '';
+            prev.style.display = 'block';
+            prev.textContent = `⏱ ${mPart}${secs}s = ${total}s`;
+        } else prev.style.display = 'none';
+    };
+
+    window.addItemEntryRow = () => {
+        itemRowCount++;
+        const id = itemRowCount;
+        document.getElementById('itemEntriesContainer').insertAdjacentHTML('beforeend', `
+        <div class="item-entry-row" id="itemRow_${id}">
+            <button class="remove-item-btn" onclick="removeItemRow(${id})">✕</button>
+            <label>Machine</label>
+            <div style="display:flex; gap:8px; margin-bottom:8px;">
+                <button type="button" id="machBtn_CNC_${id}" class="cnc-btn cnc-btn-primary" style="flex:1; padding:7px 0; font-size:13px;"
+                    onclick="setMachineFilter(${id},'CNC')">⚙️ CNC</button>
+                <button type="button" id="machBtn_Drill_${id}" class="cnc-btn cnc-btn-grey" style="flex:1; padding:7px 0; font-size:13px;"
+                    onclick="setMachineFilter(${id},'Drill')">🔩 Drill</button>
+            </div>
+            <input type="hidden" id="itemMachine_${id}" value="CNC">
+            <label>Item</label>
+            <div class="ss-wrap" id="ssItemWrap_${id}">
+                <input class="ss-input" type="text" id="ssItemText_${id}" placeholder="🔍 Item નું નામ ટાઇપ કરો..." autocomplete="off"
+                    oninput="ssFilterItem(${id})" onfocus="ssShowItem(${id})">
+                <div class="ss-list" id="ssItemList_${id}"></div>
+            </div>
+            <input type="hidden" id="itemSel_${id}" value="">
+            <label>Cycle Time</label>
+            <div class="row2" style="margin-bottom:4px;">
+                <div><label style="font-size:10px;color:#888;">Minute</label><input type="number" id="cycleMin_${id}" min="0" placeholder="0" oninput="calcRowCycle(${id})" style="margin-bottom:4px;"></div>
+                <div><label style="font-size:10px;color:#888;">Second</label><input type="number" id="cycleSec_${id}" min="0" max="59" placeholder="0" oninput="calcRowCycle(${id})" style="margin-bottom:4px;"></div>
+            </div>
+            <input type="hidden" id="cycleTotal_${id}" value="0">
+            <div class="calc-preview" id="cyclePreview_${id}"></div>
+            <label>Qty (Pieces)</label>
+            <input type="number" id="qty_${id}" min="0" placeholder="0" style="margin-bottom:6px;">
+            <label>Notes (Optional)</label>
+            <input type="text" id="itemNotes_${id}" placeholder="e.g. Special order, rework..." style="margin-bottom:0;">
+        </div>`);
+        // Default: show CNC items
+        ssFilterItem(id);
+    };
+    window.removeItemRow = id => { const el = document.getElementById(`itemRow_${id}`); if (el) el.remove(); };
+
+    window.calcGenRowPreview = rowId => {
+        const h = parseFloat(document.getElementById(`genHrs_${rowId}`).value || 0);
+        const amt = h * GEN_RATE;
+        const prev = document.getElementById(`genRowPreview_${rowId}`);
+        if (h > 0) { prev.style.display = 'block'; prev.textContent = `⏱ ${h} hr = ₹${amt.toFixed(2)}`; }
+        else prev.style.display = 'none';
+    };
+
+    window.addGenEntryRow = () => {
+        genRowCount++;
+        const id = genRowCount;
+        document.getElementById('genEntriesContainer').insertAdjacentHTML('beforeend', `
+        <div class="gen-entry-row" id="genRow_${id}">
+            <button class="remove-gen-btn" onclick="removeGenRow(${id})">✕</button>
+            <div class="gen-row-label">🛠️ General Work <span style="font-size:10px;color:var(--success);font-weight:400;">— ₹${GEN_RATE}/hr</span></div>
+            <label>Work Type</label>
+            <div class="ss-wrap" id="ssGenWrap_${id}">
+                <input class="ss-input" type="text" id="ssGenText_${id}" placeholder="🔍 Work type ટાઇપ કરો..." autocomplete="off"
+                    oninput="ssFilterGen(${id})" onfocus="ssShowGen(${id})">
+                <div class="ss-list" id="ssGenList_${id}"></div>
+            </div>
+            <input type="hidden" id="genSel_${id}" value="">
+            <label>Hours <span style="font-size:10px;color:#888;font-weight:400;">(e.g. 1.5 = 1hr 30min)</span></label>
+            <input type="number" id="genHrs_${id}" step="0.1" min="0" placeholder="e.g. 1.5" oninput="calcGenRowPreview(${id})" style="margin-bottom:4px;">
+            <div class="gen-preview-row" id="genRowPreview_${id}"></div>
+            <label style="margin-top:6px;">Notes (Optional)</label>
+            <input type="text" id="genNotes_${id}" placeholder="e.g. Machine cleaning, Tool setup..." style="margin-bottom:0;">
+        </div>`);
+    };
+    window.removeGenRow = id => { const el = document.getElementById(`genRow_${id}`); if (el) el.remove(); };
+
+    function fmtCyc(d) {
+        if (d.type !== 'item') return '';
+        if (d.cycleTotalSec !== undefined) {
+            const m = d.cycleMin || 0, s = d.cycleSec || 0;
+            if (m === 0 && s === 0) return d.cycleTotalSec > 0 ? String(d.cycleTotalSec) : '';
+            return m + ':' + String(s).padStart(2, '0');
+        }
+        if (d.cycle) return String(d.cycle);
+        return '';
+    }
+
+    function getCycKey(d) {
+        if (d.cycleTotalSec !== undefined) {
+            const m = d.cycleMin || 0, s = d.cycleSec || 0;
+            if (m > 0 || s > 0) return m + ':' + String(s).padStart(2, '0');
+            return d.cycleTotalSec > 0 ? String(d.cycleTotalSec) : '';
+        }
+        return d.cycle ? String(d.cycle) : '';
+    }
+
+    window.setMachineFilter = (id, machine) => {
+        document.getElementById(`itemMachine_${id}`).value = machine;
+        // Update button styles
+        const btnCNC   = document.getElementById(`machBtn_CNC_${id}`);
+        const btnDrill = document.getElementById(`machBtn_Drill_${id}`);
+        if (btnCNC && btnDrill) {
+            if (machine === 'CNC') {
+                btnCNC.className   = 'cnc-btn cnc-btn-primary';
+                btnDrill.className = 'cnc-btn cnc-btn-grey';
+            } else {
+                btnCNC.className   = 'cnc-btn cnc-btn-grey';
+                btnDrill.className = 'cnc-btn cnc-btn-primary';
+            }
+        }
+        // Clear selected item and re-filter list
+        document.getElementById(`ssItemText_${id}`).value = '';
+        document.getElementById(`itemSel_${id}`).value = '';
+        ssFilterItem(id);
+    };
+
+    window.ssShowItem = id => { ssFilterItem(id); };
+    window.ssShowGen = id => { ssFilterGen(id); };
+
+    window.ssFilterItem = id => {
+        const q = (document.getElementById(`ssItemText_${id}`).value || '').toLowerCase().trim();
+        const machine = (document.getElementById(`itemMachine_${id}`) || {}).value || 'CNC';
+        const list = document.getElementById(`ssItemList_${id}`);
+        const filtered = items_db.filter(it => (it.machine || 'CNC') === machine);
+        const hits = filtered.map((it, i) => ({ it, origIdx: items_db.indexOf(it) }))
+            .filter(({ it }) => it.name.toLowerCase().includes(q));
+        list.innerHTML = hits.length
+            ? hits.map(({ it, origIdx }) => `<div class="ss-item" onmousedown="ssSelectItem(${id},${origIdx})">${it.name}${it.rate ? `<span style="color:#888;font-size:11px;"> — ₹${parseFloat(it.rate).toFixed(2)}/pc</span>` : ''}</div>`).join('')
+            : `<div class="ss-item ss-empty">${machine} માટે કોઈ item નહીં</div>`;
+        list.style.display = 'block';
+    };
+
+    window.ssSelectItem = (id, idx) => {
+        document.getElementById(`ssItemText_${id}`).value = items_db[idx].name;
+        document.getElementById(`itemSel_${id}`).value = idx;
+        document.getElementById(`ssItemList_${id}`).style.display = 'none';
+    };
+
+    window.ssFilterGen = id => {
+        const q = (document.getElementById(`ssGenText_${id}`).value || '').toLowerCase().trim();
+        const list = document.getElementById(`ssGenList_${id}`);
+        const hits = gens_db.map((gn, i) => ({ gn, i })).filter(({ gn }) => gn.name.toLowerCase().includes(q));
+        list.innerHTML = hits.length
+            ? hits.map(({ gn, i }) => `<div class="ss-item" onmousedown="ssSelectGen(${id},${i})">${gn.name}</div>`).join('')
+            : '<div class="ss-item ss-empty">કોઈ work type મળ્યું નહીં</div>';
+        list.style.display = 'block';
+    };
+
+    window.ssSelectGen = (id, idx) => {
+        document.getElementById(`ssGenText_${id}`).value = gens_db[idx].name;
+        document.getElementById(`genSel_${id}`).value = idx;
+        document.getElementById(`ssGenList_${id}`).style.display = 'none';
+    };
+
+    document.addEventListener('click', e => {
+        document.querySelectorAll('.ss-list').forEach(list => {
+            const wrap = list.closest('.ss-wrap');
+            if (wrap && !wrap.contains(e.target)) list.style.display = 'none';
+        });
+    });
+
+    document.getElementById('btnSave').onclick = async () => {
+        const date = document.getElementById('entryDate').value;
+        const operator = document.getElementById('entryOperator').value;
+        const inTime = document.getElementById('cncInTime').value;
+        const outTime = document.getElementById('cncOutTime').value;
+        const breakT = parseFloat(document.getElementById('cncBreakTime').value || 0);
+        const leave = document.getElementById('cncLeaveSelect').value;
+        if (!date) return alert("તારીખ પસંદ કરો.");
+        if (!operator) return alert("Operator પસંદ કરો.");
+
+        let savedAny = false;
+        const timing = { inTime, outTime, breakTime: breakT };
+
+        if (leave) {
+            await window.fLib.addDoc(window.fLib.collection(window.db, "production_entries"),
+                { date, operator, name: leave, type: "leave", amt: 0, ...timing });
+            savedAny = true;
+        }
+
+        for (const row of document.querySelectorAll('.item-entry-row')) {
+            const rid = row.id.replace('itemRow_', '');
+            const iIdx = document.getElementById(`itemSel_${rid}`).value;
+            if (iIdx === "") continue;
+            const mins = parseFloat(document.getElementById(`cycleMin_${rid}`).value || 0);
+            const secs = parseFloat(document.getElementById(`cycleSec_${rid}`).value || 0);
+            const cycSec = parseFloat(document.getElementById(`cycleTotal_${rid}`).value || 0);
+            const qty = parseFloat(document.getElementById(`qty_${rid}`).value || 0);
+            const notes = document.getElementById(`itemNotes_${rid}`)?.value.trim() || '';
+            if (cycSec <= 0) { alert("Item row: Cycle Time ભરો."); return; }
+            await window.fLib.addDoc(window.fLib.collection(window.db, "production_entries"), {
+                date, operator, name: items_db[iIdx].name, itemId: items_db[iIdx].id,
+                cycleMin: mins, cycleSec: secs, cycleTotalSec: cycSec,
+                qty, notes, amt: 0, type: "item", ...timing
+            });
+            savedAny = true;
+        }
+
+        for (const row of document.querySelectorAll('.gen-entry-row')) {
+            const rid = row.id.replace('genRow_', '');
+            const gIdx = document.getElementById(`genSel_${rid}`).value;
+            if (gIdx === "") continue;
+            const h = parseFloat(document.getElementById(`genHrs_${rid}`).value || 0);
+            const notes = document.getElementById(`genNotes_${rid}`).value.trim();
+            if (h <= 0) { alert("General Work: કલાક ભરો."); return; }
+            const amt = parseFloat((h * GEN_RATE).toFixed(2));
+            await window.fLib.addDoc(window.fLib.collection(window.db, "production_entries"), {
+                date, operator, name: gens_db[gIdx].name,
+                hrs: parseFloat(h.toFixed(4)), hrsDisplay: `${h}hr`,
+                notes, amt, type: "general", ...timing
+            });
+            savedAny = true;
+        }
+
+        if (!savedAny) return alert("ઓછામાં ઓછી એક entry ઉમેરો.");
+        alert("✅ Record સેવ થઈ ગઈ!");
+        const savedDate = date, savedOp = operator;
+        document.getElementById('itemEntriesContainer').innerHTML = "";
+        document.getElementById('genEntriesContainer').innerHTML = "";
+        document.getElementById('cncLeaveSelect').value = "";
+        document.getElementById('cncInTime').value = "";
+        document.getElementById('cncOutTime').value = "";
+        document.getElementById('cncBreakTime').value = "0";
+        document.getElementById('entryDate').value = savedDate;
+        document.getElementById('entryOperator').value = savedOp;
+        loadDayTotal();
+    };
+
+    window.syncData = async () => {
+        if (!window.fLib) return setTimeout(window.syncData, 500);
+
+        const iSnap = await window.fLib.getDocs(window.fLib.collection(window.db, "items"));
+        items_db = iSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name));
+
+        const gSnap = await window.fLib.getDocs(window.fLib.collection(window.db, "gen_master"));
+        gens_db = gSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name));
+
+        // cycle mm:ss format helper (cycle stored as min:sec decimal e.g. 1.41 = 1min 25sec)
+        const fmtCycle = (c) => {
+            if (!c && c !== 0) return '';
+            // If cycleMin/cycleSec stored separately use those
+            // Else treat decimal minutes: 1.41 → 1:25
+            const v = parseFloat(c);
+            const m = Math.floor(v);
+            const s = Math.round((v - m) * 60);
+            return m + ':' + String(s).padStart(2, '0');
+        };
+        // Also handle cycleTotalSec (seconds stored)
+        const fmtCycleItem = (it) => {
+            if (it.cycleMin !== undefined || it.cycleSec !== undefined) {
+                const m = it.cycleMin || 0, s = it.cycleSec || 0;
+                if (m > 0 || s > 0) return m + ':' + String(s).padStart(2, '0');
+            }
+            if (it.cycleTotalSec && it.cycleTotalSec > 0) {
+                const m = Math.floor(it.cycleTotalSec / 60);
+                const s = it.cycleTotalSec % 60;
+                return m + ':' + String(s).padStart(2, '0');
+            }
+            if (it.cycle && parseFloat(it.cycle) > 0) return fmtCycle(it.cycle);
+            return '';
+        };
+
+        document.getElementById('masterItemList').innerHTML = items_db.length
+            ? items_db.map(it => {
+                const cycDisp = fmtCycleItem(it);
+                return `<div class="master-item">
+                <div class="master-item-info">
+                    <span style="display:inline-block;background:${(it.machine||'CNC')==='CNC'?'#1a73e8':'#7b2d8b'};color:white;border-radius:6px;font-size:10px;padding:1px 7px;margin-right:4px;font-weight:700;">${it.machine||'CNC'}</span>
+                    <strong>${it.name}</strong>
+
+
+                </div>
+                <div class="master-item-btns">
+                    <button class="cnc-btn-edit" onclick="openEditItem('${it.id}')">Edit</button>
+                    <button class="cnc-btn-del" onclick="deleteMasterItem('${it.id}')">Delete</button>
+                </div>
+            </div>`;}).join('')
+            : '<p style="color:var(--muted); font-size:13px;">No items added yet.</p>';
+
+        document.getElementById('masterGenList').innerHTML = gens_db.length
+            ? gens_db.map(gn => `<div class="master-item">
+                <div class="master-item-info"><strong>${gn.name}</strong></div>
+                <div class="master-item-btns">
+                    <button class="cnc-btn-edit" onclick="openEditGen('${gn.id}')">Edit</button>
+                    <button class="cnc-btn-del" onclick="deleteGenMaster('${gn.id}')">Delete</button>
+                </div>
+            </div>`).join('')
+            : '<p style="color:var(--muted); font-size:13px;">No work types added yet.</p>';
+
+        document.getElementById('entryDate').valueAsDate = new Date();
+        loadDayTotal();
+    };
+
+    window.loadReport = async () => {
+        const f = document.getElementById('repFrom').value;
+        const t = document.getElementById('repTo').value;
+        const op = document.getElementById('repOperator').value;
+
+        const snap = await window.fLib.getDocs(window.fLib.collection(window.db, "production_entries"));
+        let allData = snap.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .filter(d => (f && t) ? (d.date >= f && d.date <= t) : true)
+            .sort((a, b) => a.date.localeCompare(b.date));
+
+        document.getElementById('grandTotalDisplay').style.display = "none";
+        const fmtD = (date) => { const [y, mo, dy] = date.split('-'); return `${parseInt(dy)}-${parseInt(mo)}-${y}`; };
+
+        const buildTableHTML = (data) => {
+            let html = ""; let itemsSum = {}; let gensSum = {}; let grouped = {};
+            data.forEach(d => { if (!grouped[d.date]) grouped[d.date] = []; grouped[d.date].push(d); });
+            if (!Object.keys(grouped).length) return { html: `<tr><td colspan="9" style="color:var(--muted); padding:20px;">કોઈ record મળ્યું નહીં.</td></tr>`, itemsSum, gensSum };
+
+            Object.keys(grouped).sort().forEach(date => {
+                const entries = grouped[date];
+                const inT = entries.map(e => e.inTime).filter(x => x).sort()[0] || "";
+                const outT = entries.map(e => e.outTime).filter(x => x).sort().reverse()[0] || "";
+                const dayBreak = entries.reduce((s, e) => s + (parseFloat(e.breakTime) || 0), 0);
+
+                entries.forEach((d, i) => {
+                    if (d.type === "item") {
+                        const cycKey = getCycKey(d);
+                        const sumKey = d.name + '|' + cycKey;
+                        if (!itemsSum[sumKey]) itemsSum[sumKey] = { name: d.name, cyc: cycKey, qty: 0, rate: parseFloat(d.rate || 0) };
+                        itemsSum[sumKey].qty += parseFloat(d.qty || 0);
+                    } else if (d.type === "general") {
+                        if (!gensSum[d.name]) gensSum[d.name] = 0;
+                        gensSum[d.name] += parseFloat(d.hrs || 0);
+                    }
+                    const isLeave = d.type === "leave";
+                    const rowClass = isLeave ? 'class="leave-row"' : '';
+                    const qtyDisp = (d.type === "item") ? (d.qty !== undefined ? d.qty : "") : "";
+                    const hrsDisp = (d.type === "general") ? (parseFloat(d.hrs || 0) || "") : "";
+                    const cycDisp = (d.type === "item") ? fmtCyc(d) : "";
+
+                    html += `<tr ${rowClass}>
+                        <td>${i === 0 ? fmtD(date) : ""}</td>
+                        <td style="text-align:left;">${d.name}${d.notes ? ` <em style="color:var(--muted)">(${d.notes})</em>` : ""}</td>
+                        <td>${cycDisp}</td><td>${qtyDisp}</td><td>${hrsDisp}</td>
+                        <td>${i === 0 ? (inT + (inT ? "-" : "") + outT) : ""}</td>
+                        <td>${i === 0 ? (dayBreak > 0 ? dayBreak : "") : ""}</td>
+                        <td style="white-space:nowrap;"><button class="cnc-btn-edit" style="margin-right:3px;" onclick="editEntry('${d.id}')">✏</button><button class="cnc-btn-del" onclick="deleteEntry('${d.id}')">✕</button></td>
+                    </tr>`;
+                });
+            });
+            return { html, itemsSum, gensSum };
+        };
+
+        const buildSummaryHTML = (itemsSum, gensSum) => {
+            let sumHtml = `<tr class="summary-header"><td colspan="3">⚙️ Production Items</td></tr>`;
+            const itemKeys = Object.keys(itemsSum).sort((a, b) => { const nc = itemsSum[a].name.localeCompare(itemsSum[b].name); return nc !== 0 ? nc : (itemsSum[a].cyc || '').localeCompare(itemsSum[b].cyc || ''); });
+            if (itemKeys.length) {
+                itemKeys.forEach(k => { const it = itemsSum[k]; const cycBadge = it.cyc ? `<span class="badge">${it.cyc}</span>` : ''; sumHtml += `<tr><td>Item</td><td style="text-align:left;">${it.name}${cycBadge}</td><td><strong>${it.qty} Pcs</strong></td></tr>`; });
+            } else { sumHtml += `<tr><td colspan="3" style="color:var(--muted);">કોઈ production item નહીં</td></tr>`; }
+            sumHtml += `<tr class="summary-header"><td colspan="3">🛠️ General Work</td></tr>`;
+            const genKeys = Object.keys(gensSum).sort((a, b) => a.localeCompare(b));
+            if (genKeys.length) {
+                genKeys.forEach(k => { sumHtml += `<tr><td>Work</td><td style="text-align:left;">${k}</td><td><strong>${gensSum[k].toFixed(2)} Hrs</strong></td></tr>`; });
+            } else { sumHtml += `<tr><td colspan="3" style="color:var(--muted);">કોઈ general work નહીં</td></tr>`; }
+            return sumHtml;
+        };
+
+        const container = document.getElementById('reportTablesContainer');
+        if (op) {
+            const filtered = allData.filter(d => d.operator === op);
+            const { html, itemsSum, gensSum } = buildTableHTML(filtered);
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Cyc(s)</th><th>Qty</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Action</th></tr></thead><tbody>${html}</tbody></table></div>`;
+            document.getElementById('summaryData').innerHTML = buildSummaryHTML(itemsSum, gensSum);
+        } else {
+            const ops = [...new Set(allData.map(d => d.operator || "—"))].sort();
+            let allSummaryItemsSum = {}; let allSummaryGensSum = {}; let fullHTML = "";
+            ops.forEach(opName => {
+                const opData = allData.filter(d => (d.operator || "—") === opName);
+                const { html, itemsSum, gensSum } = buildTableHTML(opData);
+                Object.keys(itemsSum).forEach(k => { if (!allSummaryItemsSum[k]) allSummaryItemsSum[k] = { name: itemsSum[k].name, cyc: itemsSum[k].cyc, qty: 0 }; allSummaryItemsSum[k].qty += itemsSum[k].qty; });
+                Object.keys(gensSum).forEach(k => { if (!allSummaryGensSum[k]) allSummaryGensSum[k] = 0; allSummaryGensSum[k] += gensSum[k]; });
+                fullHTML += `<div style="margin-bottom:18px;"><div style="background:#2c3e50; color:white; padding:8px 12px; border-radius:8px 8px 0 0; font-weight:bold; font-size:13px;">👷 ${opName}</div><div class="table-wrapper" style="border-radius:0 0 8px 8px; margin-bottom:0;"><table><thead><tr><th>Date</th><th>Description</th><th>Cyc(s)</th><th>Qty</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Action</th></tr></thead><tbody>${html}</tbody></table></div></div>`;
+            });
+            container.innerHTML = fullHTML || `<p style="color:var(--muted); padding:20px;">આ સમયગાળા માટે કોઈ record મળ્યું નહીં.</p>`;
+            document.getElementById('summaryData').innerHTML = buildSummaryHTML(allSummaryItemsSum, allSummaryGensSum);
+        }
+    };
+
+    async function generateAdvancedPDF() {
+        const pF = document.getElementById('pdfProdFrom').value;
+        const pT = document.getElementById('pdfProdTo').value;
+        const lF = document.getElementById('pdfLeaveFrom').value;
+        const lT = document.getElementById('pdfLeaveTo').value;
+        const pdfOp = document.getElementById('pdfOperator').value;
+        if (!pF || !pT || !lF || !lT) return alert("PDF ની બધી તારીખ ભરો.");
+
+        const { jsPDF } = window.jspdf;
+        const pdfDoc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageW = pdfDoc.internal.pageSize.getWidth();
+        const pageH = pdfDoc.internal.pageSize.getHeight();
+
+        const snap = await window.fLib.getDocs(window.fLib.collection(window.db, "production_entries"));
+        const allRaw = snap.docs.map(d => d.data());
+        const fmtDate = (d) => { const [y, m, day] = d.split('-'); return `${parseInt(day)}-${parseInt(m)}-${y}`; };
+        const normName = (s) => (s || "—").toString().trim().replace(/\s+/g, ' ').toLowerCase();
+
+        const isAllOperators = (!pdfOp || pdfOp === '__ALL__');
+        // Use the master Operator list from Settings (window.operators_db) as the source of truth for "All Operators",
+        // instead of deriving unique names from raw entry records — old/stray entries can carry slightly mismatched
+        // operator name strings (extra space, different case, etc.) which would otherwise show up as duplicates.
+        const masterOperatorNames = (window.operators_db && window.operators_db.length)
+            ? [...new Set(window.operators_db.map(o => o.name))].sort((a, b) => a.localeCompare(b))
+            : [...new Set(allRaw.map(d => d.operator || "—"))].sort();
+        let operatorList = isAllOperators ? masterOperatorNames : [pdfOp];
+
+        /* ---- Front page: All-operators Leave/Break summary table.
+               Top half of the A4 page is left completely blank for manual/handwritten notes (pen),
+               and the printed summary table starts from the bottom half of the page. ---- */
+        const renderOperatorsSummaryPage = () => {
+            const safeDateS = (d) => { try { const [y, m, day] = d.split('-'); return String(parseInt(day)).padStart(2, '0') + '/' + String(parseInt(m)).padStart(2, '0') + '/' + y; } catch (e) { return d || '--'; } };
+            const prodLabelS  = window._cncPdfProdLabel  || (safeDateS(pF) + "  to  " + safeDateS(pT));
+            const leaveLabelS = window._cncPdfLeaveLabel || (safeDateS(lF) + "  to  " + safeDateS(lT));
+            const samePeriod = (pF === lF && pT === lT);
+            const today = new Date();
+            const genDateS = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
+
+            const summaryRows = operatorList.map(opName => {
+                const opAll = allRaw.filter(d => normName(d.operator) === normName(opName));
+                const leaveData = opAll.filter(d => d.date >= lF && d.date <= lT);
+                const totalBrk = leaveData.reduce((s, e) => s + (parseFloat(e.breakTime) || 0), 0);
+                const pLDates = [...new Set(leaveData.filter(d => d.name === "Personal Leave").map(d => d.date))];
+                const sLDates = [...new Set(leaveData.filter(d => d.name === "Sick Leave").map(d => d.date))];
+                const kLDates = [...new Set(leaveData.filter(d => d.name === "Holiday Leave").map(d => d.date))];
+                return [opName, pLDates.length + ' days', sLDates.length + ' days', kLDates.length + ' days', totalBrk.toFixed(1) + ' hrs'];
+            });
+
+            const lx3 = 8;
+            const topBlankH = pageH * 0.66; // ~66% of the page (top) stays completely blank for manual pen writing
+            let y = topBlankH;
+
+            pdfDoc.setDrawColor(190, 190, 190); pdfDoc.setLineWidth(0.3);
+            pdfDoc.line(0, topBlankH - 5, pageW, topBlankH - 5);
+
+            pdfDoc.setFontSize(12); pdfDoc.setFont(undefined, 'bold'); pdfDoc.setTextColor(10, 25, 55);
+            pdfDoc.text("DRISHTI FLANGES AND METAL", lx3, y);
+            pdfDoc.setFontSize(9); pdfDoc.setFont(undefined, 'normal'); pdfDoc.setTextColor(55, 55, 55);
+            pdfDoc.text("All Operators - Leave / Break Summary", lx3, y + 5.5);
+            y += 11;
+
+            pdfDoc.setFontSize(7.5); pdfDoc.setFont(undefined, 'bold'); pdfDoc.setTextColor(26, 115, 232);
+            if (samePeriod) {
+                pdfDoc.text(`PERIOD : ${leaveLabelS}     |     Generated : ${genDateS}`, lx3, y);
+            } else {
+                pdfDoc.text(`PRODUCTION PERIOD : ${prodLabelS}     |     LEAVE/BREAK PERIOD : ${leaveLabelS}     |     Generated : ${genDateS}`, lx3, y);
+            }
+            y += 5;
+
+            pdfDoc.autoTable({
+                startY: y,
+                head: [['Operator', 'Personal Leave', 'Sick Leave', 'Holiday Leave', 'Total Break']],
+                body: summaryRows,
+                margin: { left: lx3, right: lx3 },
+                tableWidth: pageW - (lx3 * 2),
+                styles: { fontSize: 9, halign: 'center', cellPadding: 3.2, textColor: [20, 20, 20], lineColor: [190, 190, 190], lineWidth: 0.25 },
+                columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
+                headStyles: { fillColor: [26, 62, 90], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
+                alternateRowStyles: { fillColor: [245, 248, 255] }
+            });
+        };
+
+        const renderOperatorPage = (opName, isFirst) => {
+            if (!isFirst) pdfDoc.addPage();
+            const all = allRaw.filter(d => normName(d.operator) === normName(opName));
+            const prodData = all.filter(d => d.date >= pF && d.date <= pT && d.type !== "leave").sort((a, b) => a.date.localeCompare(b.date));
+            const leaveData = all.filter(d => d.date >= lF && d.date <= lT);
+            const totalBrk = leaveData.reduce((s, e) => s + (parseFloat(e.breakTime) || 0), 0);
+            const pLDates = [...new Set(leaveData.filter(d => d.name === "Personal Leave").map(d => d.date))].sort();
+            const kLDates = [...new Set(leaveData.filter(d => d.name === "Holiday Leave").map(d => d.date))].sort();
+            const pL = pLDates.length, kL = kLDates.length;
+            const HDR_H = 46, colRW = 62, colR = pageW - colRW - 2;
+            pdfDoc.setFillColor(26, 115, 232); pdfDoc.rect(0, 0, pageW, 2, 'F');
+            pdfDoc.setDrawColor(210, 210, 210); pdfDoc.setLineWidth(0.25); pdfDoc.line(0, HDR_H, pageW, HDR_H);
+            const lx = 5;
+            pdfDoc.setFontSize(16); pdfDoc.setFont(undefined, 'bold'); pdfDoc.setTextColor(10, 25, 55);
+            pdfDoc.text("DRISHTI FLANGES AND METAL", lx, 14);
+            const tW = pdfDoc.getTextWidth("DRISHTI FLANGES AND METAL");
+            pdfDoc.setFillColor(26, 115, 232); pdfDoc.rect(lx, 15.5, tW, 0.9, 'F');
+            pdfDoc.setFontSize(8); pdfDoc.setFont(undefined, 'normal'); pdfDoc.setTextColor(55, 55, 55);
+            pdfDoc.text("Production & Attendance", lx, 22);
+            pdfDoc.setFont(undefined, 'bold'); pdfDoc.setTextColor(26, 62, 90);
+            pdfDoc.text(`  |  Operator : ${opName}`, lx + pdfDoc.getTextWidth("Production & Attendance"), 22);
+            pdfDoc.setDrawColor(200, 200, 200); pdfDoc.setLineWidth(0.2); pdfDoc.line(lx, 25, colR - 6, 25);
+            const dl = (label, value, y) => {
+                pdfDoc.setFontSize(7); pdfDoc.setFont(undefined, 'bold'); pdfDoc.setTextColor(26, 115, 232);
+                const labelStr = label + " : "; pdfDoc.text(labelStr, lx, y);
+                const labelW = pdfDoc.getTextWidth(labelStr); pdfDoc.setFont(undefined, 'normal'); pdfDoc.setTextColor(30, 30, 30);
+                pdfDoc.text(value, lx + labelW, y);
+            };
+            const safeDate = (d) => { try { const [y, m, day] = d.split('-'); return String(parseInt(day)).padStart(2, '0') + '/' + String(parseInt(m)).padStart(2, '0') + '/' + y; } catch (e) { return d || '--'; } };
+            const today = new Date();
+            const genDate = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
+            const prodLabel  = window._cncPdfProdLabel  || (safeDate(pF) + "  to  " + safeDate(pT));
+            const leaveLabel = window._cncPdfLeaveLabel || (safeDate(lF) + "  to  " + safeDate(lT));
+            dl("PRODUCTION PERIOD",    prodLabel,  31);
+            dl("LEAVE / BREAK PERIOD", leaveLabel, 37);
+            dl("Generated",             genDate, 43);
+            pdfDoc.autoTable({ startY: 18, head: [['Leave / Break', 'Count']], body: [['Personal Leave', pL + ' days'], ['Holiday Leave', kL + ' days'], ['Total Break', totalBrk.toFixed(1) + ' hrs']], margin: { left: colR }, tableWidth: colRW, styles: { fontSize: 7, halign: 'center', cellPadding: { top: 2, bottom: 2, left: 3, right: 3 }, textColor: [20, 20, 20], fontStyle: 'bold', lineColor: [220, 220, 220], lineWidth: 0.2 }, columnStyles: { 0: { halign: 'left', cellWidth: colRW - 22 }, 1: { cellWidth: 22, halign: 'center', fontStyle: 'bold' } }, headStyles: { fillColor: [26, 62, 90], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7, halign: 'center' }, alternateRowStyles: { fillColor: [245, 248, 255] } });
+            const afterSummaryY = Math.max(pdfDoc.lastAutoTable.finalY + 4, HDR_H + 7);
+            let rows = []; let rowMeta = []; let grouped = {};
+            const allDateData = all.filter(d => d.date >= pF && d.date <= pT).sort((a, b) => a.date.localeCompare(b.date));
+            allDateData.forEach(d => { if (!grouped[d.date]) grouped[d.date] = []; grouped[d.date].push(d); });
+            Object.keys(grouped).sort().forEach(date => {
+                const entries = grouped[date];
+                const inT = entries.map(e => e.inTime).filter(x => x).sort()[0] || "";
+                const outT = entries.map(e => e.outTime).filter(x => x).sort().reverse()[0] || "";
+                const dayBreak = entries.reduce((s, e) => s + (parseFloat(e.breakTime) || 0), 0);
+                entries.forEach((d, i) => {
+                    rowMeta.push(d.type === "leave" ? 'leave' : 'data');
+                    let pdfCyc = "";
+                    if (d.type === "item") { const mm = d.cycleMin || 0, ss = d.cycleSec || 0; if (d.cycleTotalSec !== undefined) { if (mm > 0 || ss > 0) pdfCyc = `${mm}:${String(ss).padStart(2, '0')}`; else if (d.cycleTotalSec > 0) pdfCyc = `${d.cycleTotalSec}`; } else if (d.cycle) pdfCyc = `${d.cycle}`; }
+                    rows.push([i === 0 ? fmtDate(date) : "", d.name + (d.note ? ` (${d.note})` : ""), pdfCyc, d.qty || "", d.hrs || "", i === 0 ? (inT + (inT ? "-" : "") + outT) : "", i === 0 ? (dayBreak > 0 ? dayBreak : "") : ""]);
+                });
+            });
+            pdfDoc.autoTable({ startY: afterSummaryY, head: [['Date', 'Description', 'Cyc(s)', 'Qty', 'Hrs', 'In-Out', 'Brk']], body: rows, margin: { left: 5, right: 5 }, styles: { fontSize: 8, halign: 'center', cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 }, overflow: 'hidden', textColor: [15, 15, 15], fontStyle: 'bold' }, columnStyles: { 0: { halign: 'center', cellWidth: 20 }, 1: { halign: 'left', cellWidth: 82 }, 2: { cellWidth: 16 }, 3: { cellWidth: 14 }, 4: { cellWidth: 14 }, 5: { cellWidth: 30 }, 6: { cellWidth: 12 } }, headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' }, didParseCell: (data) => { if (data.section === 'body' && rowMeta[data.row.index] === 'leave') { data.cell.styles.fillColor = [245, 245, 245]; data.cell.styles.textColor = [70, 70, 70]; data.cell.styles.fontStyle = 'italic'; } } });
+
+            /* ---- Category summary table ---- */
+            const catStartY = pdfDoc.lastAutoTable.finalY + 10;
+            let itemsSum = {}; let gensSum = {};
+            prodData.forEach(d => {
+                if (d.type === "item") {
+                    const mm = d.cycleMin || 0, ss = d.cycleSec || 0;
+                    const cycFmt = (mm > 0 || ss > 0) ? `${mm}:${String(ss).padStart(2, '0')}` : (d.cycle ? `${d.cycle}` : '');
+                    const sumKey = d.name + '|' + cycFmt;
+                    if (!itemsSum[sumKey]) itemsSum[sumKey] = { name: d.name, cyc: cycFmt, qty: 0 };
+                    itemsSum[sumKey].qty += parseFloat(d.qty || 0);
+                } else if (d.type === "general") {
+                    if (!gensSum[d.name]) gensSum[d.name] = 0;
+                    gensSum[d.name] += parseFloat(d.hrs || 0);
+                }
+            });
+            let catRows = []; let catRowMeta = [];
+            const itemSumKeys = Object.keys(itemsSum).sort((a, b) => {
+                const nc = itemsSum[a].name.localeCompare(itemsSum[b].name);
+                if (nc !== 0) return nc;
+                return (itemsSum[a].cyc || '').localeCompare(itemsSum[b].cyc || '');
+            });
+            const genSumKeys = Object.keys(gensSum).sort((a, b) => a.localeCompare(b));
+            if (itemSumKeys.length > 0) {
+                catRowMeta.push('header'); catRows.push(['', 'Production Items', '', '']);
+                itemSumKeys.forEach(k => {
+                    catRowMeta.push('data');
+                    catRows.push(['Item', itemsSum[k].name, itemsSum[k].cyc || '', `${itemsSum[k].qty} Pcs`]);
+                });
+            }
+            if (genSumKeys.length > 0) {
+                catRowMeta.push('header'); catRows.push(['', 'General Work', '', '']);
+                genSumKeys.forEach(k => {
+                    catRowMeta.push('data');
+                    catRows.push(['Work', k, '', `${gensSum[k].toFixed(2)} Hrs`]);
+                });
+            }
+            if (catRows.length > 2) {
+                pdfDoc.autoTable({
+                    startY: catStartY,
+                    head: [['Category', 'Description', 'Cyc(s)', 'Qty / Hrs']],
+                    body: catRows,
+                    margin: { left: 14, right: 14 },
+                    tableWidth: 'auto',
+                    styles: { fontSize: 9, halign: 'center', textColor: [15, 15, 15], fontStyle: 'bold' },
+                    columnStyles: { 1: { halign: 'left' }, 2: { halign: 'center', cellWidth: 18 }, 3: { halign: 'right' } },
+                    headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0], fontStyle: 'bold' },
+                    didParseCell: (data) => {
+                        if (data.section === 'body' && catRowMeta[data.row.index] === 'header') {
+                            data.cell.styles.fillColor = [240, 240, 240];
+                            data.cell.styles.fontStyle = 'bold';
+                            data.cell.styles.halign = 'center';
+                            if (data.column.index === 0 || data.column.index === 2 || data.column.index === 3) data.cell.text = [''];
+                        }
+                    }
+                });
+            }
+        };
+
+        // Page 1 = All-operators summary page (top half blank for manual writing, table at bottom)
+        renderOperatorsSummaryPage();
+        const pageOperators = { 1: null };
+
+        operatorList.forEach((opName) => {
+            pdfDoc.addPage();
+            const startPage = pdfDoc.internal.getNumberOfPages();
+            renderOperatorPage(opName, true);
+            const endPage = pdfDoc.internal.getNumberOfPages();
+            for (let p = startPage; p <= endPage; p++) pageOperators[p] = opName;
+        });
+
+        const pageCount = pdfDoc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            pdfDoc.setPage(i);
+            pdfDoc.setFontSize(8); pdfDoc.setTextColor(110);
+            const opLabel = pageOperators[i] ? `  |  Operator: ${pageOperators[i]}` : '';
+            pdfDoc.text(`Page ${i} of ${pageCount}  |  DRISHTI FLANGES AND METAL${opLabel}`, pageW / 2, 290, { align: "center" });
+        }
+        pdfDoc.save(`DFM_Report_${pF}_to_${pT}.pdf`);
+    }
+
+    // Helper: compute date range from month/year/AB
+    function cncGetDateRange(month, year, ab) {
+        const y = parseInt(year);
+        const m = String(parseInt(month)).padStart(2, '0');
+        const lastDay = new Date(y, parseInt(month), 0).getDate();
+        if (ab === 'A') {
+            return { from: `${y}-${m}-01`, to: `${y}-${m}-15` };
+        } else if (ab === 'B') {
+            return { from: `${y}-${m}-16`, to: `${y}-${m}-${String(lastDay).padStart(2, '0')}` };
+        } else {
+            // AB = whole month
+            return { from: `${y}-${m}-01`, to: `${y}-${m}-${String(lastDay).padStart(2, '0')}` };
+        }
+    }
+
+    window.generateAdvancedPDFFromSelectors = () => {
+        const prodMonthEl = document.getElementById('pdfProdMonth');
+        const prodMonth = prodMonthEl.value;
+        const prodYear = document.getElementById('pdfProdYear').value;
+        const prodAB = document.getElementById('pdfProdAB').value;
+        const leaveMonthEl = document.getElementById('pdfLeaveMonth');
+        const leaveMonth = leaveMonthEl.value;
+        const leaveYear = document.getElementById('pdfLeaveYear').value;
+        const leaveAB = document.getElementById('pdfLeaveAB').value;
+
+        const { from: pF, to: pT } = cncGetDateRange(prodMonth, prodYear, prodAB);
+        const { from: lF, to: lT } = cncGetDateRange(leaveMonth, leaveYear, leaveAB);
+
+        // Store labels for PDF header
+        const prodMonthName = prodMonthEl.options[prodMonthEl.selectedIndex].text;
+        const leaveMonthName = leaveMonthEl.options[leaveMonthEl.selectedIndex].text;
+        window._cncPdfProdLabel  = `${prodMonthName} ${prodYear} - ${prodAB}`;
+        window._cncPdfLeaveLabel = `${leaveMonthName} ${leaveYear} - ${leaveAB}`;
+
+        // Set hidden inputs for generateAdvancedPDF to read
+        document.getElementById('pdfProdFrom').value = pF;
+        document.getElementById('pdfProdTo').value = pT;
+        document.getElementById('pdfLeaveFrom').value = lF;
+        document.getElementById('pdfLeaveTo').value = lT;
+
+        generateAdvancedPDF();
+    };
+
+    window.addItemMaster = async () => {
+        const n = document.getElementById('mItemName').value.trim();
+        const r = document.getElementById('mItemRate').value.trim();
+        const machine = document.getElementById('mItemMachine') ? document.getElementById('mItemMachine').value : 'CNC';
+        if (!n) return alert("Item નું નામ ભરો.");
+        await window.fLib.addDoc(window.fLib.collection(window.db, "items"), { name: n, rate: r ? parseFloat(r) : 0, machine: machine });
+        document.getElementById('mItemName').value = "";
+        window.syncData();
+    };
+
+    window.addGenMaster = async () => {
+        const n = document.getElementById('mGenName').value.trim();
+        if (!n) return alert("Work નું નામ ભરો.");
+        await window.fLib.addDoc(window.fLib.collection(window.db, "gen_master"), { name: n });
+        document.getElementById('mGenName').value = "";
+        window.syncData();
+    };
+
+    window.openEditItem = (id) => {
+        const it = items_db.find(x => x.id === id);
+        if (!it) return;
+        document.getElementById('editItemId').value = id;
+        document.getElementById('editItemName').value = it.name;
+        document.getElementById('editItemRate').value = it.rate || "";
+        document.getElementById('editModal').classList.add('active');
+    };
+
+    window.closeEditModal = () => { document.getElementById('editModal').classList.remove('active'); };
+
+    window.saveEditItem = async () => {
+        const id = document.getElementById('editItemId').value;
+        const n = document.getElementById('editItemName').value.trim();
+        const r = document.getElementById('editItemRate').value.trim();
+        if (!n) return alert("નામ ભરો.");
+        await window.fLib.updateDoc(window.fLib.doc(window.db, "items", id), { name: n, rate: r ? parseFloat(r) : 0 });
+        closeEditModal();
+        window.syncData();
+    };
+
+    window.openEditGen = (id) => {
+        const gn = gens_db.find(x => x.id === id);
+        if (!gn) return;
+        document.getElementById('editGenId').value = id;
+        document.getElementById('editGenName').value = gn.name;
+        document.getElementById('editGenModal').classList.add('active');
+    };
+
+    window.closeEditGenModal = () => { document.getElementById('editGenModal').classList.remove('active'); };
+
+    window.saveEditGen = async () => {
+        const id = document.getElementById('editGenId').value;
+        const n = document.getElementById('editGenName').value.trim();
+        if (!n) return alert("Work નામ ભરો.");
+        await window.fLib.updateDoc(window.fLib.doc(window.db, "gen_master", id), { name: n });
+        closeEditGenModal();
+        window.syncData();
+    };
+
+    window.deleteMasterItem = async (id) => {
+        if (confirm("આ item delete કરવો છો?")) { await window.fLib.deleteDoc(window.fLib.doc(window.db, "items", id)); window.syncData(); }
+    };
+
+    window.deleteGenMaster = async (id) => {
+        if (confirm("આ work type delete કરવો છો?")) { await window.fLib.deleteDoc(window.fLib.doc(window.db, "gen_master", id)); window.syncData(); }
+    };
+
+    window.calcEditCycle = () => {
+        const mins = parseFloat(document.getElementById('editCycleMin').value || 0);
+        const secs = parseFloat(document.getElementById('editCycleSec').value || 0);
+        const tot = (mins * 60) + secs;
+        const prev = document.getElementById('editCyclePreview');
+        prev.style.display = tot > 0 ? 'block' : 'none';
+        if (tot > 0) { const mPart = mins > 0 ? `${mins}m ` : ''; prev.textContent = `⏱ ${mPart}${secs}s = ${tot}s`; }
+    };
+
+    window.ssShowEditGen = () => { ssFilterEditGen(); };
+    window.ssFilterEditGen = () => {
+        const q = (document.getElementById('editGenWorkName').value || '').toLowerCase().trim();
+        const list = document.getElementById('ssEditGenList');
+        const hits = gens_db.map((gn, i) => ({ gn, i })).filter(({ gn }) => gn.name.toLowerCase().includes(q));
+        list.innerHTML = hits.length
+            ? hits.map(({ gn, i }) => `<div class="ss-item" onmousedown="ssSelectEditGen(${i})">${gn.name}</div>`).join('')
+            : '<div class="ss-item ss-empty">\u0a95\u0acb\u0a88 work type \u0aae\u0ab3\u0acd\u0aaf\u0ac1\u0a82 \u0aa8\u0ab9\u0ac0\u0a82</div>';
+        list.style.display = 'block';
+    };
+    window.ssSelectEditGen = (idx) => {
+        document.getElementById('editGenWorkName').value = gens_db[idx].name;
+        document.getElementById('ssEditGenList').style.display = 'none';
+    };
+
+    window.calcEditGenPreview = () => {
+        const h = parseFloat(document.getElementById('editGenHrs').value || 0);
+        const prev = document.getElementById('editGenPreview');
+        if (prev) {
+            if (h > 0) { prev.style.display = 'block'; prev.textContent = `⏱ ${h} hr`; }
+            else prev.style.display = 'none';
+        }
+    };
+
+    window.editEntry = async (id) => {
+        const snap = await window.fLib.getDocs(window.fLib.collection(window.db, "production_entries"));
+        const e = snap.docs.map(d => ({ id: d.id, ...d.data() })).find(d => d.id === id);
+        if (!e) return alert("Entry મળ્યું નહીં.");
+        document.getElementById('editEntryId').value = id;
+        document.getElementById('editEntryType').value = e.type;
+        document.getElementById('editEntryDate').value = e.date || '';
+        document.getElementById('editInTime').value = e.inTime || '';
+        document.getElementById('editOutTime').value = e.outTime || '';
+        document.getElementById('editItemSection').style.display = 'none';
+        document.getElementById('editGenSection').style.display = 'none';
+        document.getElementById('editLeaveSection').style.display = 'none';
+        if (e.type === 'item') {
+            document.getElementById('editItemSection').style.display = 'block';
+            document.getElementById('editEntryItemName').value = e.name || '';
+            document.getElementById('editCycleMin').value = e.cycleMin || 0;
+            document.getElementById('editCycleSec').value = e.cycleSec || 0;
+            document.getElementById('editItemQty').value = e.qty || 0;
+            document.getElementById('editItemNotes').value = e.notes || '';
+            calcEditCycle();
+        } else if (e.type === 'general') {
+            document.getElementById('editGenSection').style.display = 'block';
+            document.getElementById('editGenWorkName').value = e.name || '';
+            document.getElementById('editGenHrs').value = e.hrs || 0;
+            document.getElementById('editGenNotes').value = e.notes || '';
+            calcEditGenPreview();
+        } else if (e.type === 'leave') {
+            document.getElementById('editLeaveSection').style.display = 'block';
+            document.getElementById('editLeaveSel').value = e.name || 'Personal Leave';
+        }
+        document.getElementById('editEntryModal').classList.add('active');
+    };
+
+    window.closeEditEntryModal = () => { document.getElementById('editEntryModal').classList.remove('active'); };
+
+    window.saveEditEntry = async () => {
+        const id = document.getElementById('editEntryId').value;
+        const type = document.getElementById('editEntryType').value;
+        const date = document.getElementById('editEntryDate').value;
+        const inTime = document.getElementById('editInTime').value;
+        const outTime = document.getElementById('editOutTime').value;
+        if (!date) return alert("તારીખ ભરો.");
+        let u = { date, inTime, outTime };
+        if (type === 'item') {
+            const itemName = document.getElementById('editEntryItemName').value;
+            const mins = parseFloat(document.getElementById('editCycleMin').value || 0);
+            const secs = parseFloat(document.getElementById('editCycleSec').value || 0);
+            const tot = (mins * 60) + secs;
+            const qty = parseFloat(document.getElementById('editItemQty').value || 0);
+            const notes = document.getElementById('editItemNotes').value.trim();
+            u = { ...u, name: itemName, cycleMin: mins, cycleSec: secs, cycleTotalSec: tot, qty, notes, amt: 0, type: 'item' };
+        } else if (type === 'general') {
+            const genName = document.getElementById('editGenWorkName').value;
+            const h = parseFloat(document.getElementById('editGenHrs').value || 0);
+            const notes = document.getElementById('editGenNotes').value.trim();
+            const amt = parseFloat((h * GEN_RATE).toFixed(2));
+            u = { ...u, name: genName, hrs: parseFloat(h.toFixed(4)), hrsDisplay: `${h}hr`, notes, amt, type: 'general' };
+        } else if (type === 'leave') {
+            const leaveName = document.getElementById('editLeaveSel').value;
+            u = { ...u, name: leaveName, type: 'leave', amt: 0 };
+        }
+        await window.fLib.updateDoc(window.fLib.doc(window.db, "production_entries", id), u);
+        closeEditEntryModal();
+        loadReport();
+        loadDayTotal();
+        alert("✅ Entry update થઈ ગઈ!");
+    };
+
+    window.deleteEntry = async (id) => {
+        const pass = prompt("Enter password to delete:");
+        if (pass === DELETE_PASS) {
+            await window.fLib.deleteDoc(window.fLib.doc(window.db, "production_entries", id));
+            loadReport();
+            loadDayTotal();
+        } else if (pass !== null) {
+            alert("પાસવર્ડ ખોટો છે.");
+        }
+    };
+</script>
+
+</body>
+</html>
