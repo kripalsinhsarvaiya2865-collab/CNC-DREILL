@@ -49,6 +49,8 @@
         .cnc-btn-success { background: var(--success); color: white; }
         .cnc-btn-orange { background: var(--cnc-accent2); color: white; }
         .cnc-btn-grey { background: #6c757d; color: white; }
+        .cnc-btn-danger { background: var(--danger); color: white; }
+        .badge-red { background: var(--danger); }
         .cnc-btn-sm { padding: 4px 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold; width: auto; }
         .cnc-btn-del { color: var(--danger); border: 1px solid var(--danger); background: none; padding: 4px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
         .cnc-btn-edit { color: var(--cnc-accent); border: 1px solid var(--cnc-accent); background: none; padding: 4px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
@@ -137,9 +139,9 @@
                 <label>&#128119; Operator</label>
                 <select id="entryOperator" style="margin-bottom:10px;"><option value="">-- Select Operator --</option></select>
                 <div class="compact-row">
-                    <div><label>In Time</label><input type="time" id="cncInTime"></div>
-                    <div><label>Out Time</label><input type="time" id="cncOutTime"></div>
-                    <div><label>Break(Hr)</label><input type="number" id="cncBreakTime" step="0.1" value="0" placeholder="0"></div>
+                    <div><label>In Time</label><input type="time" id="cncInTime" oninput="updateDayHrsPreview()" onchange="updateDayHrsPreview()"></div>
+                    <div><label>Out Time</label><input type="time" id="cncOutTime" oninput="updateDayHrsPreview()" onchange="updateDayHrsPreview()"></div>
+                    <div><label>Break(Hr)</label><input type="number" id="cncBreakTime" step="0.1" value="0" placeholder="0" oninput="updateDayHrsPreview()"></div>
                     <div>
                         <label>Leave</label>
                         <select id="cncLeaveSelect">
@@ -150,6 +152,7 @@
                         </select>
                     </div>
                 </div>
+                <div class="calc-preview" id="dayHrsPreview" style="margin-top:8px; margin-bottom:0;"></div>
             </div>
             <div id="itemEntriesContainer"></div>
             <button class="cnc-btn cnc-btn-primary" onclick="addItemEntryRow()" style="margin-bottom:12px;">➕ Add Item</button>
@@ -176,8 +179,8 @@
             <div id="reportTablesContainer">
                 <div class="table-wrapper">
                     <table id="dailyTable">
-                        <thead><tr><th>Date</th><th>Description</th><th>Cyc(s)</th><th>Qty</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Action</th></tr></thead>
-                        <tbody id="reportData"><tr><td colspan="9" style="color:var(--muted); padding:20px;">Select a date range and tap View Report</td></tr></tbody>
+                        <thead><tr><th>Date</th><th>Description</th><th>Cyc(s)</th><th>Qty</th><th>Go Tight</th><th>No Go</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Total Hrs</th><th>Action</th></tr></thead>
+                        <tbody id="reportData"><tr><td colspan="11" style="color:var(--muted); padding:20px;">Select a date range and tap View Report</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -276,14 +279,13 @@
             </div>
             <div class="cnc-card">
                 <h3>⚙️ Production Items</h3>
-                <label>Machine</label>
-                <select id="mItemMachine" style="margin-bottom:6px;">
-                    <option value="CNC">CNC</option>
-                    <option value="Drill">Drill</option>
-                </select>
                 <label>Item Name</label>
                 <input type="text" id="mItemName" placeholder="e.g. Flange 4-inch">
-                <input type="hidden" id="mItemRate" value="0">
+                <label>Cycle Time</label>
+                <div class="row2">
+                    <div><label style="font-size:10px;color:#888;">Minute</label><input type="number" id="mItemCycMin" min="0" placeholder="0"></div>
+                    <div><label style="font-size:10px;color:#888;">Second</label><input type="number" id="mItemCycSec" min="0" max="59" placeholder="0"></div>
+                </div>
                 <button class="cnc-btn cnc-btn-primary" onclick="addItemMaster()">➕ Add Item</button>
                 <div class="divider"></div>
                 <div id="masterItemList"><p style="color:var(--muted); font-size:13px;">No items added yet.</p></div>
@@ -315,7 +317,11 @@
             <input type="hidden" id="editItemId">
             <label>Item Name</label>
             <input type="text" id="editItemName" placeholder="Item Name">
-            <input type="hidden" id="editItemRate" value="0">
+            <label>Cycle Time</label>
+            <div class="row2">
+                <div><label style="font-size:10px;color:#888;">Minute</label><input type="number" id="editItemCycMin" min="0" placeholder="0"></div>
+                <div><label style="font-size:10px;color:#888;">Second</label><input type="number" id="editItemCycSec" min="0" max="59" placeholder="0"></div>
+            </div>
             <div class="cnc-modal-btns">
                 <button class="cnc-btn cnc-btn-primary" onclick="saveEditItem()">💾 Save</button>
                 <button class="cnc-btn cnc-btn-grey" onclick="closeEditModal()">Cancel</button>
@@ -357,6 +363,10 @@
                     <div><label style="font-size:10px;">Second</label><input type="number" id="editCycleSec" min="0" max="59" placeholder="0" oninput="calcEditCycle()"></div>
                 </div>
                 <div class="calc-preview" id="editCyclePreview"></div>
+                <div class="row2">
+                    <div><label>Go Tight</label><input type="number" id="editGoQty" min="0" placeholder="0" oninput="sumEditQty()"></div>
+                    <div><label>No Go</label><input type="number" id="editNoGoQty" min="0" placeholder="0" oninput="sumEditQty()"></div>
+                </div>
                 <label>Qty (Pieces)</label><input type="number" id="editItemQty">
                 <label>Notes (Optional)</label>
                 <input type="text" id="editItemNotes" placeholder="e.g. Special order, rework...">
@@ -491,6 +501,61 @@
     window.operators_db = [];
     const GEN_RATE = 38.33;
     const DELETE_PASS = "0000";
+    const itemCycParts = (it) => {
+        let m = parseFloat(it.cycleMin || 0), s = parseFloat(it.cycleSec || 0);
+        if (!m && !s && it.cycleTotalSec > 0) { m = Math.floor(it.cycleTotalSec / 60); s = it.cycleTotalSec % 60; }
+        return { m, s };
+    };
+    const getGoNo = (d) => {
+        if (d.goQty !== undefined || d.noGoQty !== undefined) return { go: parseFloat(d.goQty) || 0, no: parseFloat(d.noGoQty) || 0 };
+        if (d.goType === 'Go Tight') return { go: parseFloat(d.qty) || 0, no: 0 };
+        if (d.goType === 'No Go') return { go: 0, no: parseFloat(d.qty) || 0 };
+        return { go: 0, no: 0 };
+    };
+    const t2m = (t) => { if (!t) return null; const [h, m] = t.split(':').map(Number); return (isNaN(h) || isNaN(m)) ? null : h * 60 + m; };
+    const spanMin = (inT, outT, brk) => {
+        const a = t2m(inT), b = t2m(outT);
+        if (a === null || b === null) return 0;
+        let d = b - a; if (d < 0) d += 1440;
+        d -= Math.round((parseFloat(brk) || 0) * 60);
+        return Math.max(0, d);
+    };
+    // Working minutes of one day. Every entry saved together carries the same in/out/break,
+    // so identical in|out|break combinations are counted only once.
+    const dayWorkMin = (entries) => {
+        const seen = new Set(); let tot = 0;
+        entries.forEach(e => {
+            if (!e.inTime || !e.outTime) return;
+            const k = e.inTime + '|' + e.outTime + '|' + (parseFloat(e.breakTime) || 0);
+            if (seen.has(k)) return; seen.add(k);
+            tot += spanMin(e.inTime, e.outTime, e.breakTime);
+        });
+        return tot;
+    };
+    // Break of one day: entries saved together repeat the same break value, so each distinct in|out|break is counted once.
+    const dayBreakHrs = (entries) => {
+        const seen = new Set(); let tot = 0;
+        entries.forEach(e => {
+            const b = parseFloat(e.breakTime) || 0; if (!b) return;
+            const k = (e.inTime || '') + '|' + (e.outTime || '') + '|' + b;
+            if (seen.has(k)) return; seen.add(k); tot += b;
+        });
+        return tot;
+    };
+    const totalBreakHrs = (list) => {
+        const g = {}; list.forEach(e => { (g[e.date] = g[e.date] || []).push(e); });
+        return Object.values(g).reduce((s, arr) => s + dayBreakHrs(arr), 0);
+    };
+    const dayHrsCell = (m) => m > 0 ? fmtHM(m) : '';
+    const fmtHM = (m) => Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm';
+    window.updateDayHrsPreview = () => {
+        const inT = document.getElementById('cncInTime').value, outT = document.getElementById('cncOutTime').value;
+        const brk = document.getElementById('cncBreakTime').value;
+        const prev = document.getElementById('dayHrsPreview');
+        if (!prev) return;
+        if (inT && outT) { const m = spanMin(inT, outT, brk); prev.style.display = 'block'; prev.textContent = `⏱ Total Hours: ${fmtHM(m)} (${(m / 60).toFixed(2)} hrs)`; }
+        else prev.style.display = 'none';
+    };
 
     window.syncOperators = async () => {
         if (!window.fLib) return setTimeout(window.syncOperators, 500);
@@ -591,21 +656,12 @@
         document.getElementById('itemEntriesContainer').insertAdjacentHTML('beforeend', `
         <div class="item-entry-row" id="itemRow_${id}">
             <button class="remove-item-btn" onclick="removeItemRow(${id})">✕</button>
-            <label>Machine</label>
-            <div style="display:flex; gap:8px; margin-bottom:8px;">
-                <button type="button" id="machBtn_CNC_${id}" class="cnc-btn cnc-btn-primary" style="flex:1; padding:7px 0; font-size:13px;"
-                    onclick="setMachineFilter(${id},'CNC')">⚙️ CNC</button>
-                <button type="button" id="machBtn_Drill_${id}" class="cnc-btn cnc-btn-grey" style="flex:1; padding:7px 0; font-size:13px;"
-                    onclick="setMachineFilter(${id},'Drill')">🔩 Drill</button>
-            </div>
-            <input type="hidden" id="itemMachine_${id}" value="CNC">
             <label>Item</label>
             <div class="ss-wrap" id="ssItemWrap_${id}">
-                <input class="ss-input" type="text" id="ssItemText_${id}" placeholder="🔍 Item નું નામ ટાઇપ કરો..." autocomplete="off"
-                    oninput="ssFilterItem(${id})" onfocus="ssShowItem(${id})">
+                <input class="ss-input" type="text" id="itemName_${id}" placeholder="🔍 Item નું નામ ટાઇપ કરો..." autocomplete="off"
+                    oninput="ssFilterItem(${id})" onfocus="ssFilterItem(${id})">
                 <div class="ss-list" id="ssItemList_${id}"></div>
             </div>
-            <input type="hidden" id="itemSel_${id}" value="">
             <label>Cycle Time</label>
             <div class="row2" style="margin-bottom:4px;">
                 <div><label style="font-size:10px;color:#888;">Minute</label><input type="number" id="cycleMin_${id}" min="0" placeholder="0" oninput="calcRowCycle(${id})" style="margin-bottom:4px;"></div>
@@ -613,13 +669,20 @@
             </div>
             <input type="hidden" id="cycleTotal_${id}" value="0">
             <div class="calc-preview" id="cyclePreview_${id}"></div>
+            <div class="row2" style="margin-bottom:4px;">
+                <div><label>Go Tight</label><input type="number" id="goQty_${id}" min="0" placeholder="0" oninput="sumRowQty(${id})" style="margin-bottom:4px;"></div>
+                <div><label>No Go</label><input type="number" id="noGoQty_${id}" min="0" placeholder="0" oninput="sumRowQty(${id})" style="margin-bottom:4px;"></div>
+            </div>
             <label>Qty (Pieces)</label>
             <input type="number" id="qty_${id}" min="0" placeholder="0" style="margin-bottom:6px;">
             <label>Notes (Optional)</label>
             <input type="text" id="itemNotes_${id}" placeholder="e.g. Special order, rework..." style="margin-bottom:0;">
         </div>`);
-        // Default: show CNC items
-        ssFilterItem(id);
+    };
+    window.sumRowQty = id => {
+        const g = document.getElementById(`goQty_${id}`).value, n = document.getElementById(`noGoQty_${id}`).value;
+        if (g === '' && n === '') return;
+        document.getElementById(`qty_${id}`).value = (parseFloat(g) || 0) + (parseFloat(n) || 0);
     };
     window.removeItemRow = id => { const el = document.getElementById(`itemRow_${id}`); if (el) el.remove(); };
 
@@ -674,47 +737,32 @@
         return d.cycle ? String(d.cycle) : '';
     }
 
-    window.setMachineFilter = (id, machine) => {
-        document.getElementById(`itemMachine_${id}`).value = machine;
-        // Update button styles
-        const btnCNC   = document.getElementById(`machBtn_CNC_${id}`);
-        const btnDrill = document.getElementById(`machBtn_Drill_${id}`);
-        if (btnCNC && btnDrill) {
-            if (machine === 'CNC') {
-                btnCNC.className   = 'cnc-btn cnc-btn-primary';
-                btnDrill.className = 'cnc-btn cnc-btn-grey';
-            } else {
-                btnCNC.className   = 'cnc-btn cnc-btn-grey';
-                btnDrill.className = 'cnc-btn cnc-btn-primary';
-            }
-        }
-        // Clear selected item and re-filter list
-        document.getElementById(`ssItemText_${id}`).value = '';
-        document.getElementById(`itemSel_${id}`).value = '';
-        ssFilterItem(id);
-    };
-
-    window.ssShowItem = id => { ssFilterItem(id); };
-    window.ssShowGen = id => { ssFilterGen(id); };
-
     window.ssFilterItem = id => {
-        const q = (document.getElementById(`ssItemText_${id}`).value || '').toLowerCase().trim();
-        const machine = (document.getElementById(`itemMachine_${id}`) || {}).value || 'CNC';
+        const q = (document.getElementById(`itemName_${id}`).value || '').toLowerCase().trim();
         const list = document.getElementById(`ssItemList_${id}`);
-        const filtered = items_db.filter(it => (it.machine || 'CNC') === machine);
-        const hits = filtered.map((it, i) => ({ it, origIdx: items_db.indexOf(it) }))
-            .filter(({ it }) => it.name.toLowerCase().includes(q));
-        list.innerHTML = hits.length
-            ? hits.map(({ it, origIdx }) => `<div class="ss-item" onmousedown="ssSelectItem(${id},${origIdx})">${it.name}${it.rate ? `<span style="color:#888;font-size:11px;"> — ₹${parseFloat(it.rate).toFixed(2)}/pc</span>` : ''}</div>`).join('')
-            : `<div class="ss-item ss-empty">${machine} માટે કોઈ item નહીં</div>`;
+        const hits = items_db.map((it, i) => ({ it, i })).filter(({ it }) => it.name.toLowerCase().includes(q));
+        if (!hits.length) { list.style.display = 'none'; return; }
+        list.innerHTML = hits.map(({ it, i }) => {
+            const cp = itemCycParts(it);
+            const cyc = (cp.m > 0 || cp.s > 0) ? `<span style="color:#888;font-size:11px;"> — ⏱ ${cp.m}:${String(cp.s).padStart(2, '0')}</span>` : '';
+            return `<div class="ss-item" onmousedown="ssSelectItem(${id},${i})">${it.name}${cyc}</div>`;
+        }).join('');
         list.style.display = 'block';
     };
 
     window.ssSelectItem = (id, idx) => {
-        document.getElementById(`ssItemText_${id}`).value = items_db[idx].name;
-        document.getElementById(`itemSel_${id}`).value = idx;
+        const it = items_db[idx];
+        document.getElementById(`itemName_${id}`).value = it.name;
         document.getElementById(`ssItemList_${id}`).style.display = 'none';
+        const cp = itemCycParts(it);
+        if (cp.m > 0 || cp.s > 0) {
+            document.getElementById(`cycleMin_${id}`).value = cp.m;
+            document.getElementById(`cycleSec_${id}`).value = cp.s;
+            calcRowCycle(id);
+        }
     };
+
+    window.ssShowGen = id => { ssFilterGen(id); };
 
     window.ssFilterGen = id => {
         const q = (document.getElementById(`ssGenText_${id}`).value || '').toLowerCase().trim();
@@ -760,18 +808,23 @@
 
         for (const row of document.querySelectorAll('.item-entry-row')) {
             const rid = row.id.replace('itemRow_', '');
-            const iIdx = document.getElementById(`itemSel_${rid}`).value;
-            if (iIdx === "") continue;
+            const itemName = (document.getElementById(`itemName_${rid}`).value || '').trim().replace(/\s+/g, ' ');
             const mins = parseFloat(document.getElementById(`cycleMin_${rid}`).value || 0);
             const secs = parseFloat(document.getElementById(`cycleSec_${rid}`).value || 0);
             const cycSec = parseFloat(document.getElementById(`cycleTotal_${rid}`).value || 0);
+            const goQty = parseFloat(document.getElementById(`goQty_${rid}`).value || 0);
+            const noGoQty = parseFloat(document.getElementById(`noGoQty_${rid}`).value || 0);
             const qty = parseFloat(document.getElementById(`qty_${rid}`).value || 0);
             const notes = document.getElementById(`itemNotes_${rid}`)?.value.trim() || '';
+            if (!itemName) {
+                if (cycSec > 0 || qty > 0 || goQty > 0 || noGoQty > 0) { alert("Item row: Item નું નામ લખો."); return; }
+                continue;
+            }
             if (cycSec <= 0) { alert("Item row: Cycle Time ભરો."); return; }
             await window.fLib.addDoc(window.fLib.collection(window.db, "production_entries"), {
-                date, operator, name: items_db[iIdx].name, itemId: items_db[iIdx].id,
+                date, operator, name: itemName,
                 cycleMin: mins, cycleSec: secs, cycleTotalSec: cycSec,
-                qty, notes, amt: 0, type: "item", ...timing
+                qty, goQty, noGoQty, notes, amt: 0, type: "item", ...timing
             });
             savedAny = true;
         }
@@ -801,6 +854,7 @@
         document.getElementById('cncInTime').value = "";
         document.getElementById('cncOutTime').value = "";
         document.getElementById('cncBreakTime').value = "0";
+        updateDayHrsPreview();
         document.getElementById('entryDate').value = savedDate;
         document.getElementById('entryOperator').value = savedOp;
         loadDayTotal();
@@ -815,40 +869,14 @@
         const gSnap = await window.fLib.getDocs(window.fLib.collection(window.db, "gen_master"));
         gens_db = gSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name));
 
-        // cycle mm:ss format helper (cycle stored as min:sec decimal e.g. 1.41 = 1min 25sec)
-        const fmtCycle = (c) => {
-            if (!c && c !== 0) return '';
-            // If cycleMin/cycleSec stored separately use those
-            // Else treat decimal minutes: 1.41 → 1:25
-            const v = parseFloat(c);
-            const m = Math.floor(v);
-            const s = Math.round((v - m) * 60);
-            return m + ':' + String(s).padStart(2, '0');
-        };
-        // Also handle cycleTotalSec (seconds stored)
-        const fmtCycleItem = (it) => {
-            if (it.cycleMin !== undefined || it.cycleSec !== undefined) {
-                const m = it.cycleMin || 0, s = it.cycleSec || 0;
-                if (m > 0 || s > 0) return m + ':' + String(s).padStart(2, '0');
-            }
-            if (it.cycleTotalSec && it.cycleTotalSec > 0) {
-                const m = Math.floor(it.cycleTotalSec / 60);
-                const s = it.cycleTotalSec % 60;
-                return m + ':' + String(s).padStart(2, '0');
-            }
-            if (it.cycle && parseFloat(it.cycle) > 0) return fmtCycle(it.cycle);
-            return '';
-        };
-
         document.getElementById('masterItemList').innerHTML = items_db.length
             ? items_db.map(it => {
-                const cycDisp = fmtCycleItem(it);
+                const cp = itemCycParts(it);
+                const cycDisp = (cp.m > 0 || cp.s > 0) ? cp.m + ':' + String(cp.s).padStart(2, '0') : '';
                 return `<div class="master-item">
                 <div class="master-item-info">
-                    <span style="display:inline-block;background:${(it.machine||'CNC')==='CNC'?'#1a73e8':'#7b2d8b'};color:white;border-radius:6px;font-size:10px;padding:1px 7px;margin-right:4px;font-weight:700;">${it.machine||'CNC'}</span>
                     <strong>${it.name}</strong>
-
-
+                    ${cycDisp ? `<span style="display:inline-block;background:#fff3e0;color:#e67e22;border:1px solid #f5c98a;border-radius:6px;font-size:11px;padding:1px 7px;margin-left:4px;font-weight:700;">⏱ ${cycDisp}</span>` : ''}
                 </div>
                 <div class="master-item-btns">
                     <button class="cnc-btn-edit" onclick="openEditItem('${it.id}')">Edit</button>
@@ -928,22 +956,25 @@
         missingAlertEl.style.display = missingHTML ? "block" : "none";
 
         const buildTableHTML = (data) => {
-            let html = ""; let itemsSum = {}; let gensSum = {}; let grouped = {};
+            let html = ""; let itemsSum = {}; let gensSum = {}; let grouped = {}; let totalMin = 0;
             data.forEach(d => { if (!grouped[d.date]) grouped[d.date] = []; grouped[d.date].push(d); });
-            if (!Object.keys(grouped).length) return { html: `<tr><td colspan="9" style="color:var(--muted); padding:20px;">કોઈ record મળ્યું નહીં.</td></tr>`, itemsSum, gensSum };
+            if (!Object.keys(grouped).length) return { html: `<tr><td colspan="11" style="color:var(--muted); padding:20px;">કોઈ record મળ્યું નહીં.</td></tr>`, itemsSum, gensSum };
 
             Object.keys(grouped).sort().forEach(date => {
                 const entries = grouped[date];
                 const inT = entries.map(e => e.inTime).filter(x => x).sort()[0] || "";
                 const outT = entries.map(e => e.outTime).filter(x => x).sort().reverse()[0] || "";
-                const dayBreak = entries.reduce((s, e) => s + (parseFloat(e.breakTime) || 0), 0);
+                const dayBreak = dayBreakHrs(entries);
+                const dayMin = dayWorkMin(entries);
+                totalMin += dayMin;
 
                 entries.forEach((d, i) => {
                     if (d.type === "item") {
                         const cycKey = getCycKey(d);
-                        const sumKey = d.name + '|' + cycKey;
-                        if (!itemsSum[sumKey]) itemsSum[sumKey] = { name: d.name, cyc: cycKey, qty: 0, rate: parseFloat(d.rate || 0) };
+                        const sumKey = (d.name || '').trim().toLowerCase() + '|' + cycKey;
+                        if (!itemsSum[sumKey]) itemsSum[sumKey] = { name: d.name, cyc: cycKey, go: 0, no: 0, qty: 0, rate: parseFloat(d.rate || 0) };
                         itemsSum[sumKey].qty += parseFloat(d.qty || 0);
+                        const gnS = getGoNo(d); itemsSum[sumKey].go += gnS.go; itemsSum[sumKey].no += gnS.no;
                     } else if (d.type === "general") {
                         if (!gensSum[d.name]) gensSum[d.name] = 0;
                         gensSum[d.name] += parseFloat(d.hrs || 0);
@@ -953,17 +984,22 @@
                     const qtyDisp = (d.type === "item") ? (d.qty !== undefined ? d.qty : "") : "";
                     const hrsDisp = (d.type === "general") ? (parseFloat(d.hrs || 0) || "") : "";
                     const cycDisp = (d.type === "item") ? fmtCyc(d) : "";
+                    const gn = (d.type === "item") ? getGoNo(d) : { go: 0, no: 0 };
+                    const goDisp = (gn.go > 0 || gn.no > 0) ? gn.go : "";
+                    const noDisp = (gn.go > 0 || gn.no > 0) ? gn.no : "";
 
                     html += `<tr ${rowClass}>
                         <td>${i === 0 ? fmtD(date) : ""}</td>
                         <td style="text-align:left;">${d.name}${d.notes ? ` <em style="color:var(--muted)">(${d.notes})</em>` : ""}</td>
-                        <td>${cycDisp}</td><td>${qtyDisp}</td><td>${hrsDisp}</td>
+                        <td>${cycDisp}</td><td>${qtyDisp}</td><td>${goDisp}</td><td>${noDisp}</td><td>${hrsDisp}</td>
                         <td>${i === 0 ? (inT + (inT ? "-" : "") + outT) : ""}</td>
                         <td>${i === 0 ? (dayBreak > 0 ? dayBreak : "") : ""}</td>
+                        <td style="font-weight:bold;">${i === 0 ? dayHrsCell(dayMin) : ""}</td>
                         <td style="white-space:nowrap;"><button class="cnc-btn-edit" style="margin-right:3px;" onclick="editEntry('${d.id}')">✏</button><button class="cnc-btn-del" onclick="deleteEntry('${d.id}')">✕</button></td>
                     </tr>`;
                 });
             });
+            html += `<tr><td colspan="9" style="text-align:right; background:#eef3fb; font-weight:bold; color:var(--cnc-accent); font-size:12px;">⏱ Total Hours</td><td style="background:#eef3fb; font-weight:bold; color:var(--cnc-accent); font-size:12px; white-space:nowrap;">${fmtHM(totalMin)}<div style="font-size:10px; font-weight:400;">(${(totalMin / 60).toFixed(2)} hrs)</div></td><td style="background:#eef3fb;"></td></tr>`;
             return { html, itemsSum, gensSum };
         };
 
@@ -971,7 +1007,17 @@
             let sumHtml = `<tr class="summary-header"><td colspan="3">⚙️ Production Items</td></tr>`;
             const itemKeys = Object.keys(itemsSum).sort((a, b) => { const nc = itemsSum[a].name.localeCompare(itemsSum[b].name); return nc !== 0 ? nc : (itemsSum[a].cyc || '').localeCompare(itemsSum[b].cyc || ''); });
             if (itemKeys.length) {
-                itemKeys.forEach(k => { const it = itemsSum[k]; const cycBadge = it.cyc ? `<span class="badge">${it.cyc}</span>` : ''; sumHtml += `<tr><td>Item</td><td style="text-align:left;">${it.name}${cycBadge}</td><td><strong>${it.qty} Pcs</strong></td></tr>`; });
+                let goT = 0, noT = 0;
+                itemKeys.forEach(k => {
+                    const it = itemsSum[k]; goT += it.go; noT += it.no;
+                    const cycBadge = it.cyc ? `<span class="badge">${it.cyc}</span>` : '';
+                    const gnLine = (it.go > 0 || it.no > 0) ? `<div style="font-size:10px; color:var(--muted); margin-top:2px;">Go Tight: ${it.go} • No Go: ${it.no}</div>` : '';
+                    sumHtml += `<tr><td>Item</td><td style="text-align:left;">${it.name}${cycBadge}</td><td><strong>${it.qty} Pcs</strong>${gnLine}</td></tr>`;
+                });
+                if (goT > 0 || noT > 0) {
+                    sumHtml += `<tr><td style="background:#f3f8ff;">Total</td><td style="text-align:left; background:#f3f8ff;">Go Tight Total</td><td style="background:#f3f8ff;"><strong>${goT} Pcs</strong></td></tr>`;
+                    sumHtml += `<tr><td style="background:#f3f8ff;">Total</td><td style="text-align:left; background:#f3f8ff;">No Go Total</td><td style="background:#f3f8ff;"><strong>${noT} Pcs</strong></td></tr>`;
+                }
             } else { sumHtml += `<tr><td colspan="3" style="color:var(--muted);">કોઈ production item નહીં</td></tr>`; }
             sumHtml += `<tr class="summary-header"><td colspan="3">🛠️ General Work</td></tr>`;
             const genKeys = Object.keys(gensSum).sort((a, b) => a.localeCompare(b));
@@ -985,7 +1031,7 @@
         if (op) {
             const filtered = allData.filter(d => d.operator === op);
             const { html, itemsSum, gensSum } = buildTableHTML(filtered);
-            container.innerHTML = `<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Cyc(s)</th><th>Qty</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Action</th></tr></thead><tbody>${html}</tbody></table></div>`;
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Cyc(s)</th><th>Qty</th><th>Go Tight</th><th>No Go</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Total Hrs</th><th>Action</th></tr></thead><tbody>${html}</tbody></table></div>`;
             document.getElementById('summaryData').innerHTML = buildSummaryHTML(itemsSum, gensSum);
         } else {
             const ops = [...new Set(allData.map(d => d.operator || "—"))].sort();
@@ -993,9 +1039,9 @@
             ops.forEach(opName => {
                 const opData = allData.filter(d => (d.operator || "—") === opName);
                 const { html, itemsSum, gensSum } = buildTableHTML(opData);
-                Object.keys(itemsSum).forEach(k => { if (!allSummaryItemsSum[k]) allSummaryItemsSum[k] = { name: itemsSum[k].name, cyc: itemsSum[k].cyc, qty: 0 }; allSummaryItemsSum[k].qty += itemsSum[k].qty; });
+                Object.keys(itemsSum).forEach(k => { if (!allSummaryItemsSum[k]) allSummaryItemsSum[k] = { name: itemsSum[k].name, cyc: itemsSum[k].cyc, go: 0, no: 0, qty: 0 }; allSummaryItemsSum[k].qty += itemsSum[k].qty; allSummaryItemsSum[k].go += itemsSum[k].go; allSummaryItemsSum[k].no += itemsSum[k].no; });
                 Object.keys(gensSum).forEach(k => { if (!allSummaryGensSum[k]) allSummaryGensSum[k] = 0; allSummaryGensSum[k] += gensSum[k]; });
-                fullHTML += `<div style="margin-bottom:18px;"><div style="background:#2c3e50; color:white; padding:8px 12px; border-radius:8px 8px 0 0; font-weight:bold; font-size:13px;">👷 ${opName}</div><div class="table-wrapper" style="border-radius:0 0 8px 8px; margin-bottom:0;"><table><thead><tr><th>Date</th><th>Description</th><th>Cyc(s)</th><th>Qty</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Action</th></tr></thead><tbody>${html}</tbody></table></div></div>`;
+                fullHTML += `<div style="margin-bottom:18px;"><div style="background:#2c3e50; color:white; padding:8px 12px; border-radius:8px 8px 0 0; font-weight:bold; font-size:13px;">👷 ${opName}</div><div class="table-wrapper" style="border-radius:0 0 8px 8px; margin-bottom:0;"><table><thead><tr><th>Date</th><th>Description</th><th>Cyc(s)</th><th>Qty</th><th>Go Tight</th><th>No Go</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Total Hrs</th><th>Action</th></tr></thead><tbody>${html}</tbody></table></div></div>`;
             });
             container.innerHTML = fullHTML || `<p style="color:var(--muted); padding:20px;">આ સમયગાળા માટે કોઈ record મળ્યું નહીં.</p>`;
             document.getElementById('summaryData').innerHTML = buildSummaryHTML(allSummaryItemsSum, allSummaryGensSum);
@@ -1020,6 +1066,10 @@
         const snap = await window.fLib.getDocs(window.fLib.collection(window.db, "production_entries"));
         const allRaw = snap.docs.map(d => d.data());
         const fmtDate = (d) => { const [y, m, day] = d.split('-'); return `${parseInt(day)}-${parseInt(m)}-${y}`; };
+        const fmtGenStamp = () => {
+            const t = new Date(); let h = t.getHours(); const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+            return String(t.getDate()).padStart(2, '0') + '/' + String(t.getMonth() + 1).padStart(2, '0') + '/' + t.getFullYear() + '  ' + String(h).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0') + ' ' + ap;
+        };
         const normName = (s) => (s || "—").toString().trim().replace(/\s+/g, ' ').toLowerCase();
 
         const isAllOperators = (!pdfOp || pdfOp === '__ALL__');
@@ -1031,107 +1081,23 @@
             : [...new Set(allRaw.map(d => d.operator || "—"))].sort();
         let operatorList = isAllOperators ? masterOperatorNames : [pdfOp];
 
-        /* ---- Front page: All-operators Leave/Break summary table.
-               Top of the A4 page is left blank; the printed summary table starts further down the page. ---- */
-        const renderOperatorsSummaryPage = () => {
-            const safeDateS = (d) => { try { const [y, m, day] = d.split('-'); return String(parseInt(day)).padStart(2, '0') + '/' + String(parseInt(m)).padStart(2, '0') + '/' + y; } catch (e) { return d || '--'; } };
-            const prodLabelS  = window._cncPdfProdLabel  || (safeDateS(pF) + "  to  " + safeDateS(pT));
-            const leaveLabelS = window._cncPdfLeaveLabel || (safeDateS(lF) + "  to  " + safeDateS(lT));
-            const samePeriod = (pF === lF && pT === lT);
-            const today = new Date();
-            const genDateS = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
-
-            const summaryRows = operatorList.map(opName => {
-                const opAll = allRaw.filter(d => normName(d.operator) === normName(opName));
-                const leaveData = opAll.filter(d => d.date >= lF && d.date <= lT);
-                const totalBrk = leaveData.reduce((s, e) => s + (parseFloat(e.breakTime) || 0), 0);
-                const pLDates = [...new Set(leaveData.filter(d => d.name === "Personal Leave").map(d => d.date))];
-                const sLDates = [...new Set(leaveData.filter(d => d.name === "Sick Leave").map(d => d.date))];
-                const kLDates = [...new Set(leaveData.filter(d => d.name === "Holiday Leave").map(d => d.date))];
-                return [opName, pLDates.length + ' days', sLDates.length + ' days', kLDates.length + ' days', totalBrk.toFixed(1) + ' hrs'];
-            });
-
-            const lx3 = PM;
-            const nonTableHeaderH = 13.5; // subtitle + divider + meta line block above the table
-            const bottomSafeLimit = 280; // stay clear of the footer line printed at y=286 on every page, plus a small safety buffer
-
-            // Measure the real rendered height of the summary table on a scratch document first —
-            // row heights can vary, so render once to find out rather than guessing.
-            const measureDoc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-            measureDoc.autoTable({
-                startY: 20,
-                head: [['Operator', 'Personal Leave', 'Sick Leave', 'Holiday Leave', 'Total Break']],
-                body: summaryRows,
-                margin: { left: lx3, right: lx3 },
-                tableWidth: CW,
-                styles: { font: 'helvetica', fontSize: 9, halign: 'center', cellPadding: 3.2, textColor: [40, 40, 40], lineColor: [225, 225, 225], lineWidth: 0.2 },
-                columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
-                headStyles: { fillColor: [245, 245, 245], textColor: [40, 40, 40], fontStyle: 'bold', fontSize: 8.5, lineColor: [210, 210, 210], lineWidth: 0.2 },
-                alternateRowStyles: { fillColor: [250, 250, 250] }
-            });
-            const tableHeight = measureDoc.lastAutoTable.finalY - 20;
-
-            const maxTopBlankH = bottomSafeLimit - nonTableHeaderH - tableHeight;
-            const topBlankH = Math.max(pageH * 0.5, Math.min(pageH * 0.78, maxTopBlankH)); // push as low as possible while still fitting all rows
-            let y = topBlankH;
-
-            pdfDoc.setFont('helvetica', 'normal'); pdfDoc.setFontSize(8.5); pdfDoc.setTextColor(130, 130, 130);
-            pdfDoc.text("All Operators — Leave / Break Summary", lx3, y);
-            y += 3.5;
-
-            pdfDoc.setDrawColor(222, 222, 222); pdfDoc.setLineWidth(0.2);
-            pdfDoc.line(lx3, y, pageW - lx3, y);
-            y += 5;
-
-            let mx3 = lx3;
-            const metaSegS = (label, value, last) => {
-                pdfDoc.setFont('helvetica', 'bold'); pdfDoc.setFontSize(6.8); pdfDoc.setTextColor(155, 155, 155);
-                const labelStr = label + '  '; pdfDoc.text(labelStr, mx3, y); mx3 += pdfDoc.getTextWidth(labelStr);
-                pdfDoc.setFont('helvetica', 'normal'); pdfDoc.setFontSize(7.2); pdfDoc.setTextColor(55, 55, 55);
-                const valueStr = value + (last ? '' : '    •    '); pdfDoc.text(valueStr, mx3, y); mx3 += pdfDoc.getTextWidth(valueStr);
-            };
-            if (samePeriod) {
-                metaSegS("PERIOD", leaveLabelS, false);
-                metaSegS("GENERATED", genDateS, true);
-            } else {
-                metaSegS("PRODUCTION", prodLabelS, false);
-                metaSegS("LEAVE/BREAK", leaveLabelS, false);
-                metaSegS("GENERATED", genDateS, true);
-            }
-            y += 5;
-
-            pdfDoc.autoTable({
-                startY: y,
-                head: [['Operator', 'Personal Leave', 'Sick Leave', 'Holiday Leave', 'Total Break']],
-                body: summaryRows,
-                margin: { left: lx3, right: lx3, bottom: pageH - bottomSafeLimit },
-                tableWidth: CW,
-                styles: { font: 'helvetica', fontSize: 9, halign: 'center', cellPadding: 3.2, textColor: [40, 40, 40], lineColor: [225, 225, 225], lineWidth: 0.2 },
-                columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
-                headStyles: { fillColor: [245, 245, 245], textColor: [40, 40, 40], fontStyle: 'bold', fontSize: 8.5, lineColor: [210, 210, 210], lineWidth: 0.2 },
-                alternateRowStyles: { fillColor: [250, 250, 250] }
-            });
-        };
-
         const renderOperatorPage = (opName, isFirst) => {
             if (!isFirst) pdfDoc.addPage();
             const all = allRaw.filter(d => normName(d.operator) === normName(opName));
             const prodData = all.filter(d => d.date >= pF && d.date <= pT && d.type !== "leave").sort((a, b) => a.date.localeCompare(b.date));
             const leaveData = all.filter(d => d.date >= lF && d.date <= lT);
-            const totalBrk = leaveData.reduce((s, e) => s + (parseFloat(e.breakTime) || 0), 0);
+            const totalBrk = totalBreakHrs(leaveData);
             const pLDates = [...new Set(leaveData.filter(d => d.name === "Personal Leave").map(d => d.date))].sort();
             const kLDates = [...new Set(leaveData.filter(d => d.name === "Holiday Leave").map(d => d.date))].sort();
             const pL = pLDates.length, kL = kLDates.length;
             const lx = PM, rxEdge = pageW - PM;
             const safeDate = (d) => { try { const [y, m, day] = d.split('-'); return String(parseInt(day)).padStart(2, '0') + '/' + String(parseInt(m)).padStart(2, '0') + '/' + y; } catch (e) { return d || '--'; } };
             const today = new Date();
-            const genDate = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
+            const genDate = fmtGenStamp();
             const prodLabel  = window._cncPdfProdLabel  || (safeDate(pF) + "  to  " + safeDate(pT));
             const leaveLabel = window._cncPdfLeaveLabel || (safeDate(lF) + "  to  " + safeDate(lT));
 
-            // Row 1: Company name (left) + Operator chip (right), same baseline
-            pdfDoc.setFont('helvetica', 'bold'); pdfDoc.setFontSize(14); pdfDoc.setTextColor(25, 25, 25);
-            pdfDoc.text("DRISHTI FLANGES AND METAL", lx, 12);
+            // Row 1: Operator chip (right) — company name/logo intentionally removed
 
             pdfDoc.setFont('helvetica', 'normal'); pdfDoc.setFontSize(6.5); pdfDoc.setTextColor(150, 150, 150);
             pdfDoc.text("OPERATOR", rxEdge, 9, { align: 'right' });
@@ -1183,15 +1149,25 @@
                 const entries = grouped[date];
                 const inT = entries.map(e => e.inTime).filter(x => x).sort()[0] || "";
                 const outT = entries.map(e => e.outTime).filter(x => x).sort().reverse()[0] || "";
-                const dayBreak = entries.reduce((s, e) => s + (parseFloat(e.breakTime) || 0), 0);
+                const dayBreak = dayBreakHrs(entries);
+                const dayMin = dayWorkMin(entries);
                 entries.forEach((d, i) => {
                     rowMeta.push(d.type === "leave" ? 'leave' : 'data');
                     let pdfCyc = "";
                     if (d.type === "item") { const mm = d.cycleMin || 0, ss = d.cycleSec || 0; if (d.cycleTotalSec !== undefined) { if (mm > 0 || ss > 0) pdfCyc = `${mm}:${String(ss).padStart(2, '0')}`; else if (d.cycleTotalSec > 0) pdfCyc = `${d.cycleTotalSec}`; } else if (d.cycle) pdfCyc = `${d.cycle}`; }
-                    rows.push([i === 0 ? fmtDate(date) : "", d.name + (d.note ? ` (${d.note})` : ""), pdfCyc, d.qty || "", d.hrs || "", i === 0 ? (inT + (inT ? "-" : "") + outT) : "", i === 0 ? (dayBreak > 0 ? dayBreak : "") : ""]);
+                    const gnp = d.type === "item" ? getGoNo(d) : { go: 0, no: 0 };
+                    const pdfGo = (gnp.go > 0 || gnp.no > 0) ? gnp.go : "";
+                    const pdfNo = (gnp.go > 0 || gnp.no > 0) ? gnp.no : "";
+                    rows.push([i === 0 ? fmtDate(date) : "", d.name + ((d.notes || d.note) ? ` (${d.notes || d.note})` : ""), pdfCyc, d.qty || "", pdfGo, pdfNo, d.hrs || "", i === 0 ? (inT + (inT ? "-" : "") + outT) : "", i === 0 ? (dayBreak > 0 ? dayBreak : "") : "", i === 0 ? dayHrsCell(dayMin) : ""]);
                 });
             });
-            pdfDoc.autoTable({ startY: afterSummaryY, head: [['Date', 'Description', 'Cyc(s)', 'Qty', 'Hrs', 'In-Out', 'Brk']], body: rows, margin: { left: PM, right: PM }, tableWidth: CW, styles: { font: 'helvetica', fontSize: 8, halign: 'center', cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 }, overflow: 'hidden', textColor: [35, 35, 35], fontStyle: 'normal', lineColor: [225, 225, 225], lineWidth: 0.15 }, columnStyles: { 0: { halign: 'center', cellWidth: 22, fontStyle: 'bold' }, 1: { halign: 'left', cellWidth: 80 }, 2: { cellWidth: 18 }, 3: { cellWidth: 16 }, 4: { cellWidth: 14 }, 5: { cellWidth: 28 }, 6: { cellWidth: 12 } }, headStyles: { fillColor: [235, 235, 235], textColor: [40, 40, 40], fontStyle: 'bold', halign: 'center', lineColor: [210, 210, 210], lineWidth: 0.2 }, alternateRowStyles: { fillColor: [250, 250, 250] }, didParseCell: (data) => { if (data.section === 'body' && rowMeta[data.row.index] === 'leave') { data.cell.styles.fillColor = [242, 242, 242]; data.cell.styles.textColor = [110, 110, 110]; data.cell.styles.fontStyle = 'italic'; } } });
+            if (rows.length > 0) {
+                let pdfTotalMin = 0;
+                Object.keys(grouped).forEach(dt => { pdfTotalMin += dayWorkMin(grouped[dt]); });
+                rowMeta.push('total');
+                rows.push(['', 'Total Hours', '', '', '', '', '', '', '', fmtHM(pdfTotalMin)]);
+            }
+            pdfDoc.autoTable({ startY: afterSummaryY, head: [['Date', 'Description', 'Cyc(s)', 'Qty', 'Go Tight', 'No Go', 'Hrs', 'In-Out', 'Brk', 'Total Hrs']], body: rows, margin: { left: PM, right: PM }, tableWidth: CW, styles: { font: 'helvetica', fontSize: 8, halign: 'center', cellPadding: { top: 2.5, bottom: 2.5, left: 2, right: 2 }, overflow: 'hidden', textColor: [35, 35, 35], fontStyle: 'normal', lineColor: [225, 225, 225], lineWidth: 0.15 }, columnStyles: { 0: { halign: 'center', cellWidth: 22, fontStyle: 'bold' }, 1: { halign: 'left', cellWidth: 42, overflow: 'linebreak' }, 2: { cellWidth: 15 }, 3: { cellWidth: 13 }, 4: { cellWidth: 17 }, 5: { cellWidth: 14 }, 6: { cellWidth: 12 }, 7: { cellWidth: 26 }, 8: { cellWidth: 10 }, 9: { cellWidth: 19, fontStyle: 'bold' } }, headStyles: { fillColor: [235, 235, 235], textColor: [40, 40, 40], fontStyle: 'bold', halign: 'center', lineColor: [210, 210, 210], lineWidth: 0.2 }, alternateRowStyles: { fillColor: [250, 250, 250] }, didParseCell: (data) => { if (data.section === 'body' && rowMeta[data.row.index] === 'total') { data.cell.styles.fillColor = [238, 243, 251]; data.cell.styles.fontStyle = 'bold'; } if (data.section === 'body' && rowMeta[data.row.index] === 'leave') { data.cell.styles.fillColor = [242, 242, 242]; data.cell.styles.textColor = [110, 110, 110]; data.cell.styles.fontStyle = 'italic'; } } });
 
             /* ---- Category summary table ---- */
             const catStartY = pdfDoc.lastAutoTable.finalY + 10;
@@ -1200,7 +1176,8 @@
                 if (d.type === "item") {
                     const mm = d.cycleMin || 0, ss = d.cycleSec || 0;
                     const cycFmt = (mm > 0 || ss > 0) ? `${mm}:${String(ss).padStart(2, '0')}` : (d.cycle ? `${d.cycle}` : '');
-                    const sumKey = d.name + '|' + cycFmt;
+                    // same item + same cycle time => one line with the total quantity
+                    const sumKey = (d.name || '').trim().toLowerCase() + '|' + cycFmt;
                     if (!itemsSum[sumKey]) itemsSum[sumKey] = { name: d.name, cyc: cycFmt, qty: 0 };
                     itemsSum[sumKey].qty += parseFloat(d.qty || 0);
                 } else if (d.type === "general") {
@@ -1208,6 +1185,10 @@
                     gensSum[d.name] += parseFloat(d.hrs || 0);
                 }
             });
+            // Go Tight / No Go grand totals (shown in a box below the category table)
+            let goTotal = 0, noGoTotal = 0;
+            prodData.forEach(d => { if (d.type === "item") { const g = getGoNo(d); goTotal += g.go; noGoTotal += g.no; } });
+
             let catRows = []; let catRowMeta = [];
             const itemSumKeys = Object.keys(itemsSum).sort((a, b) => {
                 const nc = itemsSum[a].name.localeCompare(itemsSum[b].name);
@@ -1229,7 +1210,7 @@
                     catRows.push(['Work', k, '', `${gensSum[k].toFixed(2)} Hrs`]);
                 });
             }
-            if (catRows.length > 2) {
+            if (catRows.length > 0) {
                 pdfDoc.autoTable({
                     startY: catStartY,
                     head: [['Category', 'Description', 'Cyc(s)', 'Qty / Hrs']],
@@ -1246,19 +1227,35 @@
                             data.cell.styles.textColor = [90, 90, 90];
                             data.cell.styles.fontStyle = 'bold';
                             data.cell.styles.halign = 'center';
-                            if (data.column.index === 0 || data.column.index === 2 || data.column.index === 3) data.cell.text = [''];
+                            if (data.column.index !== 1) data.cell.text = [''];
                         }
                     }
                 });
+
+                // Totals below the category table: Go Tight pieces and No Go pieces
+                if (goTotal > 0 || noGoTotal > 0) {
+                    let by = pdfDoc.lastAutoTable.finalY + 6;
+                    const bh = 12, bgap = 2.5, bw = (CW - bgap) / 2;
+                    if (by + bh > 280) { pdfDoc.addPage(); by = 20; }
+                    [['TOTAL GO TIGHT', goTotal], ['TOTAL NO GO', noGoTotal]].forEach((bx, i) => {
+                        const x = PM + i * (bw + bgap);
+                        pdfDoc.setFillColor(238, 243, 251); pdfDoc.setDrawColor(210, 220, 235); pdfDoc.setLineWidth(0.2);
+                        pdfDoc.roundedRect(x, by, bw, bh, 1.2, 1.2, 'FD');
+                        pdfDoc.setFont('helvetica', 'normal'); pdfDoc.setFontSize(6.5); pdfDoc.setTextColor(120, 130, 150);
+                        pdfDoc.text(bx[0], x + bw / 2, by + 4.5, { align: 'center' });
+                        pdfDoc.setFont('helvetica', 'bold'); pdfDoc.setFontSize(11); pdfDoc.setTextColor(30, 30, 30);
+                        pdfDoc.text(`${bx[1]} Pcs`, x + bw / 2, by + 9.5, { align: 'center' });
+                    });
+                }
             }
         };
 
-        // Page 1 = All-operators summary page (top half blank for manual writing, table at bottom)
-        renderOperatorsSummaryPage();
-        const pageOperators = { 1: null };
+        // No front summary page: the PDF contains only each operator's details + category-wise report
+        if (!operatorList.length) return alert("કોઈ Operator મળ્યો નહીં.");
+        const pageOperators = {};
 
-        operatorList.forEach((opName) => {
-            pdfDoc.addPage();
+        operatorList.forEach((opName, idx) => {
+            if (idx > 0) pdfDoc.addPage();
             const startPage = pdfDoc.internal.getNumberOfPages();
             renderOperatorPage(opName, true);
             const endPage = pdfDoc.internal.getNumberOfPages();
@@ -1271,8 +1268,8 @@
             pdfDoc.setDrawColor(230, 230, 230); pdfDoc.setLineWidth(0.2);
             pdfDoc.line(PM, 286, pageW - PM, 286);
             pdfDoc.setFont('helvetica', 'normal'); pdfDoc.setFontSize(7.5); pdfDoc.setTextColor(140, 140, 140);
-            const opLabel = pageOperators[i] ? `  •  Operator: ${pageOperators[i]}` : '';
-            pdfDoc.text(`DRISHTI FLANGES AND METAL${opLabel}`, PM, 290);
+            const opLabel = pageOperators[i] ? `Operator: ${pageOperators[i]}` : '';
+            if (opLabel) pdfDoc.text(opLabel, PM, 290);
             pdfDoc.text(`Page ${i} of ${pageCount}`, pageW - PM, 290, { align: "right" });
         }
         pdfDoc.save(`DFM_Report_${pF}_to_${pT}.pdf`);
@@ -1323,11 +1320,13 @@
 
     window.addItemMaster = async () => {
         const n = document.getElementById('mItemName').value.trim();
-        const r = document.getElementById('mItemRate').value.trim();
-        const machine = document.getElementById('mItemMachine') ? document.getElementById('mItemMachine').value : 'CNC';
         if (!n) return alert("Item નું નામ ભરો.");
-        await window.fLib.addDoc(window.fLib.collection(window.db, "items"), { name: n, rate: r ? parseFloat(r) : 0, machine: machine });
+        const cMin = parseFloat(document.getElementById('mItemCycMin').value || 0);
+        const cSec = parseFloat(document.getElementById('mItemCycSec').value || 0);
+        await window.fLib.addDoc(window.fLib.collection(window.db, "items"), { name: n, cycleMin: cMin, cycleSec: cSec, cycleTotalSec: (cMin * 60) + cSec });
         document.getElementById('mItemName').value = "";
+        document.getElementById('mItemCycMin').value = "";
+        document.getElementById('mItemCycSec').value = "";
         window.syncData();
     };
 
@@ -1344,7 +1343,9 @@
         if (!it) return;
         document.getElementById('editItemId').value = id;
         document.getElementById('editItemName').value = it.name;
-        document.getElementById('editItemRate').value = it.rate || "";
+        const cp = itemCycParts(it);
+        document.getElementById('editItemCycMin').value = cp.m || "";
+        document.getElementById('editItemCycSec').value = cp.s || "";
         document.getElementById('editModal').classList.add('active');
     };
 
@@ -1353,11 +1354,16 @@
     window.saveEditItem = async () => {
         const id = document.getElementById('editItemId').value;
         const n = document.getElementById('editItemName').value.trim();
-        const r = document.getElementById('editItemRate').value.trim();
         if (!n) return alert("નામ ભરો.");
-        await window.fLib.updateDoc(window.fLib.doc(window.db, "items", id), { name: n, rate: r ? parseFloat(r) : 0 });
+        const cMin = parseFloat(document.getElementById('editItemCycMin').value || 0);
+        const cSec = parseFloat(document.getElementById('editItemCycSec').value || 0);
+        await window.fLib.updateDoc(window.fLib.doc(window.db, "items", id), { name: n, cycleMin: cMin, cycleSec: cSec, cycleTotalSec: (cMin * 60) + cSec });
         closeEditModal();
         window.syncData();
+    };
+
+    window.deleteMasterItem = async (id) => {
+        if (confirm("આ item delete કરવો છો?")) { await window.fLib.deleteDoc(window.fLib.doc(window.db, "items", id)); window.syncData(); }
     };
 
     window.openEditGen = (id) => {
@@ -1379,12 +1385,14 @@
         window.syncData();
     };
 
-    window.deleteMasterItem = async (id) => {
-        if (confirm("આ item delete કરવો છો?")) { await window.fLib.deleteDoc(window.fLib.doc(window.db, "items", id)); window.syncData(); }
-    };
-
     window.deleteGenMaster = async (id) => {
         if (confirm("આ work type delete કરવો છો?")) { await window.fLib.deleteDoc(window.fLib.doc(window.db, "gen_master", id)); window.syncData(); }
+    };
+
+    window.sumEditQty = () => {
+        const g = document.getElementById('editGoQty').value, n = document.getElementById('editNoGoQty').value;
+        if (g === '' && n === '') return;
+        document.getElementById('editItemQty').value = (parseFloat(g) || 0) + (parseFloat(n) || 0);
     };
 
     window.calcEditCycle = () => {
@@ -1438,6 +1446,9 @@
             document.getElementById('editCycleMin').value = e.cycleMin || 0;
             document.getElementById('editCycleSec').value = e.cycleSec || 0;
             document.getElementById('editItemQty').value = e.qty || 0;
+            const gnE = getGoNo(e);
+            document.getElementById('editGoQty').value = (gnE.go > 0 || gnE.no > 0) ? gnE.go : '';
+            document.getElementById('editNoGoQty').value = (gnE.go > 0 || gnE.no > 0) ? gnE.no : '';
             document.getElementById('editItemNotes').value = e.notes || '';
             calcEditCycle();
         } else if (e.type === 'general') {
@@ -1470,7 +1481,9 @@
             const tot = (mins * 60) + secs;
             const qty = parseFloat(document.getElementById('editItemQty').value || 0);
             const notes = document.getElementById('editItemNotes').value.trim();
-            u = { ...u, name: itemName, cycleMin: mins, cycleSec: secs, cycleTotalSec: tot, qty, notes, amt: 0, type: 'item' };
+            const goQty = parseFloat(document.getElementById('editGoQty').value || 0);
+            const noGoQty = parseFloat(document.getElementById('editNoGoQty').value || 0);
+            u = { ...u, name: itemName, cycleMin: mins, cycleSec: secs, cycleTotalSec: tot, qty, goQty, noGoQty, goType: '', notes, amt: 0, type: 'item' };
         } else if (type === 'general') {
             const genName = document.getElementById('editGenWorkName').value;
             const h = parseFloat(document.getElementById('editGenHrs').value || 0);
