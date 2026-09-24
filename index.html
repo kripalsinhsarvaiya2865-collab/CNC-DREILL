@@ -85,6 +85,9 @@
         .date-nav-btn { background: var(--cnc-accent); color: white; border: none; border-radius: 8px; padding: 9px 13px; font-size: 17px; cursor: pointer; flex-shrink: 0; line-height: 1; }
         .date-strip input[type="date"] { flex: 1; margin-bottom: 0; font-size: 13px; padding: 9px 8px; }
         .compact-row { display: grid; grid-template-columns: 1fr 1fr 0.7fr 0.8fr; gap: 6px; margin-bottom: 4px; }
+        .qty-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+        .qty-row label { font-size: 10px; margin-bottom: 2px; }
+        .qty-row input { padding: 7px 6px; font-size: 12px; margin-bottom: 0; }
         .compact-row label { font-size: 10px; margin-bottom: 2px; }
         .compact-row input, .compact-row select { padding: 7px 6px; font-size: 12px; margin-bottom: 0; }
         .day-total-box { background: linear-gradient(135deg,#27ae60,#2ecc71); color: white; padding: 10px; border-radius: 8px; font-weight: bold; text-align: center; margin-bottom: 12px; font-size: 14px; display: none; }
@@ -118,14 +121,6 @@
 <body>
 
 <div id="cncApp">
-    <div class="cnc-header">
-        <div class="cnc-header-center">
-            <h1>🔩 CNC Production</h1>
-            <p>Drishti Flanges & Metal</p>
-        </div>
-        
-    </div>
-
     <div class="container">
         <!-- ENTRY SECTION -->
         <div id="cnc_entry" class="cnc-content-section active">
@@ -172,15 +167,18 @@
                 </div>
                 <label>👷 Operator Filter</label>
                 <select id="repOperator"><option value="">-- All Operators --</option></select>
-                <button onclick="loadReport()" class="cnc-btn cnc-btn-primary">🔍 View Report</button>
+                <div class="row" style="margin-top:2px;">
+                    <div><button onclick="loadReport()" class="cnc-btn cnc-btn-primary">🔍 View Report</button></div>
+                    <div><button onclick="generateAdvancedPDF()" class="cnc-btn cnc-btn-orange">📄 Download PDF</button></div>
+                </div>
             </div>
             <div id="missingDatesAlert" style="display:none;"></div>
             <div id="grandTotalDisplay" class="total-box" style="display:none;">Grand Total: ₹ 0.00</div>
             <div id="reportTablesContainer">
                 <div class="table-wrapper">
                     <table id="dailyTable">
-                        <thead><tr><th>Date</th><th>Description</th><th>Cyc(s)</th><th>Qty</th><th>Go Tight</th><th>No Go</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Total Hrs</th><th>Action</th></tr></thead>
-                        <tbody id="reportData"><tr><td colspan="11" style="color:var(--muted); padding:20px;">Select a date range and tap View Report</td></tr></tbody>
+                        <thead><tr><th>Date</th><th>Description</th><th>Qty</th><th>Go Tight</th><th>No Go</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Total Hrs</th><th>Action</th></tr></thead>
+                        <tbody id="reportData"><tr><td colspan="10" style="color:var(--muted); padding:20px;">Select a date range and tap View Report</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -192,77 +190,6 @@
                         <tbody id="summaryData"><tr><td colspan="3" style="color:var(--muted); padding:15px;">Load report to see summary</td></tr></tbody>
                     </table>
                 </div>
-            </div>
-            <div class="cnc-card">
-                <h3>📥 Download PDF Report</h3>
-                <p style="font-size:12px; color:var(--muted); margin:0 0 10px;">Production અને Leave/Break માટે અલગ-અલગ મહિનો અને A/B પસંદ કરો.</p>
-                <div class="pdf-range">
-                    <label>👷 Operator</label>
-                    <select id="pdfOperator" style="margin-bottom:12px;"><option value="">-- Select --</option><option value="__ALL__">👥 All Operators (બધા ઓપરેટર)</option></select>
-
-                    <div style="background:#fff; border:1px solid #d0e3ff; border-radius:8px; padding:10px; margin-bottom:10px;">
-                        <div style="font-weight:700; color:#1a73e8; font-size:12px; margin-bottom:8px;">⚙️ Production સમય</div>
-                        <div class="row">
-                            <div>
-                                <label>📅 મહિનો</label>
-                                <select id="pdfProdMonth">
-                                    <option value="01">Jan</option><option value="02">Feb</option>
-                                    <option value="03">Mar</option><option value="04">Apr</option>
-                                    <option value="05">May</option><option value="06">Jun</option>
-                                    <option value="07">Jul</option><option value="08">Aug</option>
-                                    <option value="09">Sep</option><option value="10">Oct</option>
-                                    <option value="11">Nov</option><option value="12">Dec</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>📆 વર્ષ</label>
-                                <input type="number" id="pdfProdYear" value="2025" min="2020" max="2099">
-                            </div>
-                            <div>
-                                <label>🔤 A / B</label>
-                                <select id="pdfProdAB">
-                                    <option value="A">A</option>
-                                    <option value="B">B</option>
-                                    <option value="AB">A,B (આખો મહિનો)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <!-- Hidden date inputs for compatibility -->
-                        <input type="hidden" id="pdfProdFrom"><input type="hidden" id="pdfProdTo">
-                    </div>
-
-                    <div style="background:#fff; border:1px solid #a8d5b5; border-radius:8px; padding:10px; margin-bottom:4px;">
-                        <div style="font-weight:700; color:#27ae60; font-size:12px; margin-bottom:8px;">🏖️ Leave / Break સમય</div>
-                        <div class="row">
-                            <div>
-                                <label>📅 મહિનો</label>
-                                <select id="pdfLeaveMonth">
-                                    <option value="01">Jan</option><option value="02">Feb</option>
-                                    <option value="03">Mar</option><option value="04">Apr</option>
-                                    <option value="05">May</option><option value="06">Jun</option>
-                                    <option value="07">Jul</option><option value="08">Aug</option>
-                                    <option value="09">Sep</option><option value="10">Oct</option>
-                                    <option value="11">Nov</option><option value="12">Dec</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>📆 વર્ષ</label>
-                                <input type="number" id="pdfLeaveYear" value="2025" min="2020" max="2099">
-                            </div>
-                            <div>
-                                <label>🔤 A / B</label>
-                                <select id="pdfLeaveAB">
-                                    <option value="A">A</option>
-                                    <option value="B">B</option>
-                                    <option value="AB">A,B (આખો મહિનો)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <!-- Hidden date inputs for compatibility -->
-                        <input type="hidden" id="pdfLeaveFrom"><input type="hidden" id="pdfLeaveTo">
-                    </div>
-                </div>
-                <button onclick="generateAdvancedPDFFromSelectors()" class="cnc-btn cnc-btn-orange" style="margin-top:10px;">📄 Generate & Download PDF</button>
             </div>
         </div>
 
@@ -281,11 +208,6 @@
                 <h3>⚙️ Production Items</h3>
                 <label>Item Name</label>
                 <input type="text" id="mItemName" placeholder="e.g. Flange 4-inch">
-                <label>Cycle Time</label>
-                <div class="row2">
-                    <div><label style="font-size:10px;color:#888;">Minute</label><input type="number" id="mItemCycMin" min="0" placeholder="0"></div>
-                    <div><label style="font-size:10px;color:#888;">Second</label><input type="number" id="mItemCycSec" min="0" max="59" placeholder="0"></div>
-                </div>
                 <button class="cnc-btn cnc-btn-primary" onclick="addItemMaster()">➕ Add Item</button>
                 <div class="divider"></div>
                 <div id="masterItemList"><p style="color:var(--muted); font-size:13px;">No items added yet.</p></div>
@@ -317,11 +239,6 @@
             <input type="hidden" id="editItemId">
             <label>Item Name</label>
             <input type="text" id="editItemName" placeholder="Item Name">
-            <label>Cycle Time</label>
-            <div class="row2">
-                <div><label style="font-size:10px;color:#888;">Minute</label><input type="number" id="editItemCycMin" min="0" placeholder="0"></div>
-                <div><label style="font-size:10px;color:#888;">Second</label><input type="number" id="editItemCycSec" min="0" max="59" placeholder="0"></div>
-            </div>
             <div class="cnc-modal-btns">
                 <button class="cnc-btn cnc-btn-primary" onclick="saveEditItem()">💾 Save</button>
                 <button class="cnc-btn cnc-btn-grey" onclick="closeEditModal()">Cancel</button>
@@ -357,12 +274,6 @@
             <div id="editItemSection" style="display:none;">
                 <label>Item</label>
                 <input type="text" id="editEntryItemName" style="margin-bottom:10px;">
-                <label>Cycle Time</label>
-                <div class="row2">
-                    <div><label style="font-size:10px;">Minute</label><input type="number" id="editCycleMin" min="0" placeholder="0" oninput="calcEditCycle()"></div>
-                    <div><label style="font-size:10px;">Second</label><input type="number" id="editCycleSec" min="0" max="59" placeholder="0" oninput="calcEditCycle()"></div>
-                </div>
-                <div class="calc-preview" id="editCyclePreview"></div>
                 <div class="row2">
                     <div><label>Go Tight</label><input type="number" id="editGoQty" min="0" placeholder="0" oninput="sumEditQty()"></div>
                     <div><label>No Go</label><input type="number" id="editNoGoQty" min="0" placeholder="0" oninput="sumEditQty()"></div>
@@ -378,7 +289,7 @@
                         oninput="ssFilterEditGen()" onfocus="ssShowEditGen()">
                     <div class="ss-list" id="ssEditGenList"></div>
                 </div>
-                <label>Hours <span style="font-size:10px;color:#888;font-weight:400;">(e.g. 1.5 = 1hr 30min)</span></label>
+                <label>Hours <span style="font-size:10px;color:#888;font-weight:400;">(Optional • e.g. 1.5 = 1hr 30min)</span></label>
                 <input type="number" id="editGenHrs" step="0.1" min="0" placeholder="e.g. 1.5" oninput="calcEditGenPreview()">
                 <div class="gen-preview-row" id="editGenPreview" style="display:none;"></div>
                 <label style="margin-top:6px;">Notes (Optional)</label>
@@ -435,18 +346,14 @@
     window.fLib = { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where };
 
     const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    const localYMD = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const firstDay = localYMD(new Date(now.getFullYear(), now.getMonth(), 1));
+    const lastDay = localYMD(new Date(now.getFullYear(), now.getMonth() + 1, 0));
 
     // Init CNC app dates when opened
     window.cncAppReady = () => {
         document.getElementById('repFrom').value = firstDay;
         document.getElementById('repTo').value = lastDay;
-        // Set month/year selectors to current month
-        const curMonth = String(now.getMonth() + 1).padStart(2, '0');
-        const curYear = now.getFullYear();
-        ['pdfProdMonth','pdfLeaveMonth'].forEach(id => { const el = document.getElementById(id); if(el) el.value = curMonth; });
-        ['pdfProdYear','pdfLeaveYear'].forEach(id => { const el = document.getElementById(id); if(el) el.value = curYear; });
         window.syncData();
         setTimeout(() => { if (window.syncOperators) window.syncOperators(); }, 600);
     };
@@ -501,11 +408,6 @@
     window.operators_db = [];
     const GEN_RATE = 38.33;
     const DELETE_PASS = "0000";
-    const itemCycParts = (it) => {
-        let m = parseFloat(it.cycleMin || 0), s = parseFloat(it.cycleSec || 0);
-        if (!m && !s && it.cycleTotalSec > 0) { m = Math.floor(it.cycleTotalSec / 60); s = it.cycleTotalSec % 60; }
-        return { m, s };
-    };
     const getGoNo = (d) => {
         if (d.goQty !== undefined || d.noGoQty !== undefined) return { go: parseFloat(d.goQty) || 0, no: parseFloat(d.noGoQty) || 0 };
         if (d.goType === 'Go Tight') return { go: parseFloat(d.qty) || 0, no: 0 };
@@ -570,14 +472,6 @@
         const repOpEl = document.getElementById('repOperator');
         if (repOpEl) repOpEl.innerHTML = '<option value="">-- All Operators --</option>' + ops.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
 
-        const pdfOpEl = document.getElementById('pdfOperator');
-        if (pdfOpEl) {
-            const prevPdfOp = pdfOpEl.value;
-            pdfOpEl.innerHTML = '<option value="">-- Select --</option><option value="__ALL__">👥 All Operators (બધા ઓપરેટર)</option>' + ops.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
-            if (prevPdfOp && [...pdfOpEl.options].some(o => o.value === prevPdfOp)) pdfOpEl.value = prevPdfOp;
-            else pdfOpEl.value = '__ALL__';
-        }
-
         const masterOpList = document.getElementById('masterOperatorList');
         if (masterOpList) {
             masterOpList.innerHTML = ops.length
@@ -637,19 +531,6 @@
 
     let itemRowCount = 0, genRowCount = 0;
 
-    window.calcRowCycle = rowId => {
-        const mins = parseFloat(document.getElementById(`cycleMin_${rowId}`).value || 0);
-        const secs = parseFloat(document.getElementById(`cycleSec_${rowId}`).value || 0);
-        const total = (mins * 60) + secs;
-        document.getElementById(`cycleTotal_${rowId}`).value = total;
-        const prev = document.getElementById(`cyclePreview_${rowId}`);
-        if (total > 0) {
-            const mPart = mins > 0 ? `${mins}m ` : '';
-            prev.style.display = 'block';
-            prev.textContent = `⏱ ${mPart}${secs}s = ${total}s`;
-        } else prev.style.display = 'none';
-    };
-
     window.addItemEntryRow = () => {
         itemRowCount++;
         const id = itemRowCount;
@@ -662,19 +543,11 @@
                     oninput="ssFilterItem(${id})" onfocus="ssFilterItem(${id})">
                 <div class="ss-list" id="ssItemList_${id}"></div>
             </div>
-            <label>Cycle Time</label>
-            <div class="row2" style="margin-bottom:4px;">
-                <div><label style="font-size:10px;color:#888;">Minute</label><input type="number" id="cycleMin_${id}" min="0" placeholder="0" oninput="calcRowCycle(${id})" style="margin-bottom:4px;"></div>
-                <div><label style="font-size:10px;color:#888;">Second</label><input type="number" id="cycleSec_${id}" min="0" max="59" placeholder="0" oninput="calcRowCycle(${id})" style="margin-bottom:4px;"></div>
+            <div class="qty-row">
+                <div><label>Go Tight</label><input type="number" id="goQty_${id}" min="0" placeholder="0" oninput="sumRowQty(${id})"></div>
+                <div><label>No Go</label><input type="number" id="noGoQty_${id}" min="0" placeholder="0" oninput="sumRowQty(${id})"></div>
+                <div><label>Qty</label><input type="number" id="qty_${id}" min="0" placeholder="0"></div>
             </div>
-            <input type="hidden" id="cycleTotal_${id}" value="0">
-            <div class="calc-preview" id="cyclePreview_${id}"></div>
-            <div class="row2" style="margin-bottom:4px;">
-                <div><label>Go Tight</label><input type="number" id="goQty_${id}" min="0" placeholder="0" oninput="sumRowQty(${id})" style="margin-bottom:4px;"></div>
-                <div><label>No Go</label><input type="number" id="noGoQty_${id}" min="0" placeholder="0" oninput="sumRowQty(${id})" style="margin-bottom:4px;"></div>
-            </div>
-            <label>Qty (Pieces)</label>
-            <input type="number" id="qty_${id}" min="0" placeholder="0" style="margin-bottom:6px;">
             <label>Notes (Optional)</label>
             <input type="text" id="itemNotes_${id}" placeholder="e.g. Special order, rework..." style="margin-bottom:0;">
         </div>`);
@@ -708,7 +581,7 @@
                 <div class="ss-list" id="ssGenList_${id}"></div>
             </div>
             <input type="hidden" id="genSel_${id}" value="">
-            <label>Hours <span style="font-size:10px;color:#888;font-weight:400;">(e.g. 1.5 = 1hr 30min)</span></label>
+            <label>Hours <span style="font-size:10px;color:#888;font-weight:400;">(Optional • e.g. 1.5 = 1hr 30min)</span></label>
             <input type="number" id="genHrs_${id}" step="0.1" min="0" placeholder="e.g. 1.5" oninput="calcGenRowPreview(${id})" style="margin-bottom:4px;">
             <div class="gen-preview-row" id="genRowPreview_${id}"></div>
             <label style="margin-top:6px;">Notes (Optional)</label>
@@ -717,35 +590,13 @@
     };
     window.removeGenRow = id => { const el = document.getElementById(`genRow_${id}`); if (el) el.remove(); };
 
-    function fmtCyc(d) {
-        if (d.type !== 'item') return '';
-        if (d.cycleTotalSec !== undefined) {
-            const m = d.cycleMin || 0, s = d.cycleSec || 0;
-            if (m === 0 && s === 0) return d.cycleTotalSec > 0 ? String(d.cycleTotalSec) : '';
-            return m + ':' + String(s).padStart(2, '0');
-        }
-        if (d.cycle) return String(d.cycle);
-        return '';
-    }
-
-    function getCycKey(d) {
-        if (d.cycleTotalSec !== undefined) {
-            const m = d.cycleMin || 0, s = d.cycleSec || 0;
-            if (m > 0 || s > 0) return m + ':' + String(s).padStart(2, '0');
-            return d.cycleTotalSec > 0 ? String(d.cycleTotalSec) : '';
-        }
-        return d.cycle ? String(d.cycle) : '';
-    }
-
     window.ssFilterItem = id => {
         const q = (document.getElementById(`itemName_${id}`).value || '').toLowerCase().trim();
         const list = document.getElementById(`ssItemList_${id}`);
         const hits = items_db.map((it, i) => ({ it, i })).filter(({ it }) => it.name.toLowerCase().includes(q));
         if (!hits.length) { list.style.display = 'none'; return; }
         list.innerHTML = hits.map(({ it, i }) => {
-            const cp = itemCycParts(it);
-            const cyc = (cp.m > 0 || cp.s > 0) ? `<span style="color:#888;font-size:11px;"> — ⏱ ${cp.m}:${String(cp.s).padStart(2, '0')}</span>` : '';
-            return `<div class="ss-item" onmousedown="ssSelectItem(${id},${i})">${it.name}${cyc}</div>`;
+            return `<div class="ss-item" onmousedown="ssSelectItem(${id},${i})">${it.name}</div>`;
         }).join('');
         list.style.display = 'block';
     };
@@ -754,12 +605,6 @@
         const it = items_db[idx];
         document.getElementById(`itemName_${id}`).value = it.name;
         document.getElementById(`ssItemList_${id}`).style.display = 'none';
-        const cp = itemCycParts(it);
-        if (cp.m > 0 || cp.s > 0) {
-            document.getElementById(`cycleMin_${id}`).value = cp.m;
-            document.getElementById(`cycleSec_${id}`).value = cp.s;
-            calcRowCycle(id);
-        }
     };
 
     window.ssShowGen = id => { ssFilterGen(id); };
@@ -809,21 +654,16 @@
         for (const row of document.querySelectorAll('.item-entry-row')) {
             const rid = row.id.replace('itemRow_', '');
             const itemName = (document.getElementById(`itemName_${rid}`).value || '').trim().replace(/\s+/g, ' ');
-            const mins = parseFloat(document.getElementById(`cycleMin_${rid}`).value || 0);
-            const secs = parseFloat(document.getElementById(`cycleSec_${rid}`).value || 0);
-            const cycSec = parseFloat(document.getElementById(`cycleTotal_${rid}`).value || 0);
             const goQty = parseFloat(document.getElementById(`goQty_${rid}`).value || 0);
             const noGoQty = parseFloat(document.getElementById(`noGoQty_${rid}`).value || 0);
             const qty = parseFloat(document.getElementById(`qty_${rid}`).value || 0);
             const notes = document.getElementById(`itemNotes_${rid}`)?.value.trim() || '';
             if (!itemName) {
-                if (cycSec > 0 || qty > 0 || goQty > 0 || noGoQty > 0) { alert("Item row: Item નું નામ લખો."); return; }
+                if (qty > 0 || goQty > 0 || noGoQty > 0) { alert("Item row: Item નું નામ લખો."); return; }
                 continue;
             }
-            if (cycSec <= 0) { alert("Item row: Cycle Time ભરો."); return; }
             await window.fLib.addDoc(window.fLib.collection(window.db, "production_entries"), {
                 date, operator, name: itemName,
-                cycleMin: mins, cycleSec: secs, cycleTotalSec: cycSec,
                 qty, goQty, noGoQty, notes, amt: 0, type: "item", ...timing
             });
             savedAny = true;
@@ -833,13 +673,12 @@
             const rid = row.id.replace('genRow_', '');
             const gIdx = document.getElementById(`genSel_${rid}`).value;
             if (gIdx === "") continue;
-            const h = parseFloat(document.getElementById(`genHrs_${rid}`).value || 0);
+            const h = parseFloat(document.getElementById(`genHrs_${rid}`).value) || 0;
             const notes = document.getElementById(`genNotes_${rid}`).value.trim();
-            if (h <= 0) { alert("General Work: કલાક ભરો."); return; }
             const amt = parseFloat((h * GEN_RATE).toFixed(2));
             await window.fLib.addDoc(window.fLib.collection(window.db, "production_entries"), {
                 date, operator, name: gens_db[gIdx].name,
-                hrs: parseFloat(h.toFixed(4)), hrsDisplay: `${h}hr`,
+                hrs: parseFloat(h.toFixed(4)), hrsDisplay: h > 0 ? `${h}hr` : '',
                 notes, amt, type: "general", ...timing
             });
             savedAny = true;
@@ -871,12 +710,9 @@
 
         document.getElementById('masterItemList').innerHTML = items_db.length
             ? items_db.map(it => {
-                const cp = itemCycParts(it);
-                const cycDisp = (cp.m > 0 || cp.s > 0) ? cp.m + ':' + String(cp.s).padStart(2, '0') : '';
                 return `<div class="master-item">
                 <div class="master-item-info">
                     <strong>${it.name}</strong>
-                    ${cycDisp ? `<span style="display:inline-block;background:#fff3e0;color:#e67e22;border:1px solid #f5c98a;border-radius:6px;font-size:11px;padding:1px 7px;margin-left:4px;font-weight:700;">⏱ ${cycDisp}</span>` : ''}
                 </div>
                 <div class="master-item-btns">
                     <button class="cnc-btn-edit" onclick="openEditItem('${it.id}')">Edit</button>
@@ -958,7 +794,7 @@
         const buildTableHTML = (data) => {
             let html = ""; let itemsSum = {}; let gensSum = {}; let grouped = {}; let totalMin = 0;
             data.forEach(d => { if (!grouped[d.date]) grouped[d.date] = []; grouped[d.date].push(d); });
-            if (!Object.keys(grouped).length) return { html: `<tr><td colspan="11" style="color:var(--muted); padding:20px;">કોઈ record મળ્યું નહીં.</td></tr>`, itemsSum, gensSum };
+            if (!Object.keys(grouped).length) return { html: `<tr><td colspan="10" style="color:var(--muted); padding:20px;">કોઈ record મળ્યું નહીં.</td></tr>`, itemsSum, gensSum };
 
             Object.keys(grouped).sort().forEach(date => {
                 const entries = grouped[date];
@@ -970,9 +806,8 @@
 
                 entries.forEach((d, i) => {
                     if (d.type === "item") {
-                        const cycKey = getCycKey(d);
-                        const sumKey = (d.name || '').trim().toLowerCase() + '|' + cycKey;
-                        if (!itemsSum[sumKey]) itemsSum[sumKey] = { name: d.name, cyc: cycKey, go: 0, no: 0, qty: 0, rate: parseFloat(d.rate || 0) };
+                        const sumKey = (d.name || '').trim().toLowerCase();
+                        if (!itemsSum[sumKey]) itemsSum[sumKey] = { name: d.name, go: 0, no: 0, qty: 0, rate: parseFloat(d.rate || 0) };
                         itemsSum[sumKey].qty += parseFloat(d.qty || 0);
                         const gnS = getGoNo(d); itemsSum[sumKey].go += gnS.go; itemsSum[sumKey].no += gnS.no;
                     } else if (d.type === "general") {
@@ -983,7 +818,6 @@
                     const rowClass = isLeave ? 'class="leave-row"' : '';
                     const qtyDisp = (d.type === "item") ? (d.qty !== undefined ? d.qty : "") : "";
                     const hrsDisp = (d.type === "general") ? (parseFloat(d.hrs || 0) || "") : "";
-                    const cycDisp = (d.type === "item") ? fmtCyc(d) : "";
                     const gn = (d.type === "item") ? getGoNo(d) : { go: 0, no: 0 };
                     const goDisp = (gn.go > 0 || gn.no > 0) ? gn.go : "";
                     const noDisp = (gn.go > 0 || gn.no > 0) ? gn.no : "";
@@ -991,7 +825,7 @@
                     html += `<tr ${rowClass}>
                         <td>${i === 0 ? fmtD(date) : ""}</td>
                         <td style="text-align:left;">${d.name}${d.notes ? ` <em style="color:var(--muted)">(${d.notes})</em>` : ""}</td>
-                        <td>${cycDisp}</td><td>${qtyDisp}</td><td>${goDisp}</td><td>${noDisp}</td><td>${hrsDisp}</td>
+                        <td>${qtyDisp}</td><td>${goDisp}</td><td>${noDisp}</td><td>${hrsDisp}</td>
                         <td>${i === 0 ? (inT + (inT ? "-" : "") + outT) : ""}</td>
                         <td>${i === 0 ? (dayBreak > 0 ? dayBreak : "") : ""}</td>
                         <td style="font-weight:bold;">${i === 0 ? dayHrsCell(dayMin) : ""}</td>
@@ -999,20 +833,19 @@
                     </tr>`;
                 });
             });
-            html += `<tr><td colspan="9" style="text-align:right; background:#eef3fb; font-weight:bold; color:var(--cnc-accent); font-size:12px;">⏱ Total Hours</td><td style="background:#eef3fb; font-weight:bold; color:var(--cnc-accent); font-size:12px; white-space:nowrap;">${fmtHM(totalMin)}<div style="font-size:10px; font-weight:400;">(${(totalMin / 60).toFixed(2)} hrs)</div></td><td style="background:#eef3fb;"></td></tr>`;
+            html += `<tr><td colspan="8" style="text-align:right; background:#eef3fb; font-weight:bold; color:var(--cnc-accent); font-size:12px;">⏱ Total Hours</td><td style="background:#eef3fb; font-weight:bold; color:var(--cnc-accent); font-size:12px; white-space:nowrap;">${fmtHM(totalMin)}<div style="font-size:10px; font-weight:400;">(${(totalMin / 60).toFixed(2)} hrs)</div></td><td style="background:#eef3fb;"></td></tr>`;
             return { html, itemsSum, gensSum };
         };
 
         const buildSummaryHTML = (itemsSum, gensSum) => {
             let sumHtml = `<tr class="summary-header"><td colspan="3">⚙️ Production Items</td></tr>`;
-            const itemKeys = Object.keys(itemsSum).sort((a, b) => { const nc = itemsSum[a].name.localeCompare(itemsSum[b].name); return nc !== 0 ? nc : (itemsSum[a].cyc || '').localeCompare(itemsSum[b].cyc || ''); });
+            const itemKeys = Object.keys(itemsSum).sort((a, b) => { return itemsSum[a].name.localeCompare(itemsSum[b].name); });
             if (itemKeys.length) {
                 let goT = 0, noT = 0;
                 itemKeys.forEach(k => {
                     const it = itemsSum[k]; goT += it.go; noT += it.no;
-                    const cycBadge = it.cyc ? `<span class="badge">${it.cyc}</span>` : '';
                     const gnLine = (it.go > 0 || it.no > 0) ? `<div style="font-size:10px; color:var(--muted); margin-top:2px;">Go Tight: ${it.go} • No Go: ${it.no}</div>` : '';
-                    sumHtml += `<tr><td>Item</td><td style="text-align:left;">${it.name}${cycBadge}</td><td><strong>${it.qty} Pcs</strong>${gnLine}</td></tr>`;
+                    sumHtml += `<tr><td>Item</td><td style="text-align:left;">${it.name}</td><td><strong>${it.qty} Pcs</strong>${gnLine}</td></tr>`;
                 });
                 if (goT > 0 || noT > 0) {
                     sumHtml += `<tr><td style="background:#f3f8ff;">Total</td><td style="text-align:left; background:#f3f8ff;">Go Tight Total</td><td style="background:#f3f8ff;"><strong>${goT} Pcs</strong></td></tr>`;
@@ -1022,7 +855,7 @@
             sumHtml += `<tr class="summary-header"><td colspan="3">🛠️ General Work</td></tr>`;
             const genKeys = Object.keys(gensSum).sort((a, b) => a.localeCompare(b));
             if (genKeys.length) {
-                genKeys.forEach(k => { sumHtml += `<tr><td>Work</td><td style="text-align:left;">${k}</td><td><strong>${gensSum[k].toFixed(2)} Hrs</strong></td></tr>`; });
+                genKeys.forEach(k => { sumHtml += `<tr><td>Work</td><td style="text-align:left;">${k}</td><td><strong>${gensSum[k] > 0 ? gensSum[k].toFixed(2) + ' Hrs' : '—'}</strong></td></tr>`; });
             } else { sumHtml += `<tr><td colspan="3" style="color:var(--muted);">કોઈ general work નહીં</td></tr>`; }
             return sumHtml;
         };
@@ -1031,7 +864,7 @@
         if (op) {
             const filtered = allData.filter(d => d.operator === op);
             const { html, itemsSum, gensSum } = buildTableHTML(filtered);
-            container.innerHTML = `<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Cyc(s)</th><th>Qty</th><th>Go Tight</th><th>No Go</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Total Hrs</th><th>Action</th></tr></thead><tbody>${html}</tbody></table></div>`;
+            container.innerHTML = `<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Qty</th><th>Go Tight</th><th>No Go</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Total Hrs</th><th>Action</th></tr></thead><tbody>${html}</tbody></table></div>`;
             document.getElementById('summaryData').innerHTML = buildSummaryHTML(itemsSum, gensSum);
         } else {
             const ops = [...new Set(allData.map(d => d.operator || "—"))].sort();
@@ -1039,9 +872,9 @@
             ops.forEach(opName => {
                 const opData = allData.filter(d => (d.operator || "—") === opName);
                 const { html, itemsSum, gensSum } = buildTableHTML(opData);
-                Object.keys(itemsSum).forEach(k => { if (!allSummaryItemsSum[k]) allSummaryItemsSum[k] = { name: itemsSum[k].name, cyc: itemsSum[k].cyc, go: 0, no: 0, qty: 0 }; allSummaryItemsSum[k].qty += itemsSum[k].qty; allSummaryItemsSum[k].go += itemsSum[k].go; allSummaryItemsSum[k].no += itemsSum[k].no; });
+                Object.keys(itemsSum).forEach(k => { if (!allSummaryItemsSum[k]) allSummaryItemsSum[k] = { name: itemsSum[k].name, go: 0, no: 0, qty: 0 }; allSummaryItemsSum[k].qty += itemsSum[k].qty; allSummaryItemsSum[k].go += itemsSum[k].go; allSummaryItemsSum[k].no += itemsSum[k].no; });
                 Object.keys(gensSum).forEach(k => { if (!allSummaryGensSum[k]) allSummaryGensSum[k] = 0; allSummaryGensSum[k] += gensSum[k]; });
-                fullHTML += `<div style="margin-bottom:18px;"><div style="background:#2c3e50; color:white; padding:8px 12px; border-radius:8px 8px 0 0; font-weight:bold; font-size:13px;">👷 ${opName}</div><div class="table-wrapper" style="border-radius:0 0 8px 8px; margin-bottom:0;"><table><thead><tr><th>Date</th><th>Description</th><th>Cyc(s)</th><th>Qty</th><th>Go Tight</th><th>No Go</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Total Hrs</th><th>Action</th></tr></thead><tbody>${html}</tbody></table></div></div>`;
+                fullHTML += `<div style="margin-bottom:18px;"><div style="background:#2c3e50; color:white; padding:8px 12px; border-radius:8px 8px 0 0; font-weight:bold; font-size:13px;">👷 ${opName}</div><div class="table-wrapper" style="border-radius:0 0 8px 8px; margin-bottom:0;"><table><thead><tr><th>Date</th><th>Description</th><th>Qty</th><th>Go Tight</th><th>No Go</th><th>Hrs</th><th>In-Out</th><th>Brk</th><th>Total Hrs</th><th>Action</th></tr></thead><tbody>${html}</tbody></table></div></div>`;
             });
             container.innerHTML = fullHTML || `<p style="color:var(--muted); padding:20px;">આ સમયગાળા માટે કોઈ record મળ્યું નહીં.</p>`;
             document.getElementById('summaryData').innerHTML = buildSummaryHTML(allSummaryItemsSum, allSummaryGensSum);
@@ -1049,12 +882,13 @@
     };
 
     async function generateAdvancedPDF() {
-        const pF = document.getElementById('pdfProdFrom').value;
-        const pT = document.getElementById('pdfProdTo').value;
-        const lF = document.getElementById('pdfLeaveFrom').value;
-        const lT = document.getElementById('pdfLeaveTo').value;
-        const pdfOp = document.getElementById('pdfOperator').value;
-        if (!pF || !pT || !lF || !lT) return alert("PDF ની બધી તારીખ ભરો.");
+        // PDF uses exactly the From / To dates and Operator selected at the top of the Report tab
+        const pF = document.getElementById('repFrom').value;
+        const pT = document.getElementById('repTo').value;
+        const lF = pF, lT = pT;
+        const pdfOp = document.getElementById('repOperator').value;
+        if (!pF || !pT) return alert("ઉપર From અને To તારીખ પસંદ કરો.");
+        if (pF > pT) return alert("From તારીખ To તારીખ કરતાં પહેલાંની હોવી જોઈએ.");
 
         const { jsPDF } = window.jspdf;
         const pdfDoc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -1094,8 +928,7 @@
             const safeDate = (d) => { try { const [y, m, day] = d.split('-'); return String(parseInt(day)).padStart(2, '0') + '/' + String(parseInt(m)).padStart(2, '0') + '/' + y; } catch (e) { return d || '--'; } };
             const today = new Date();
             const genDate = fmtGenStamp();
-            const prodLabel  = window._cncPdfProdLabel  || (safeDate(pF) + "  to  " + safeDate(pT));
-            const leaveLabel = window._cncPdfLeaveLabel || (safeDate(lF) + "  to  " + safeDate(lT));
+            const prodLabel  = safeDate(pF) + "  to  " + safeDate(pT);
 
             // Row 1: Operator chip (right) — company name/logo intentionally removed
 
@@ -1120,8 +953,7 @@
                 pdfDoc.setFont('helvetica', 'normal'); pdfDoc.setFontSize(7.2); pdfDoc.setTextColor(55, 55, 55);
                 const valueStr = value + (last ? '' : '    •    '); pdfDoc.text(valueStr, mx, metaY); mx += pdfDoc.getTextWidth(valueStr);
             };
-            metaSeg("PRODUCTION PERIOD", prodLabel, false);
-            metaSeg("LEAVE/BREAK PERIOD", leaveLabel, false);
+            metaSeg("PERIOD", prodLabel, false);
             metaSeg("GENERATED", genDate, true);
 
             // Row 4: clean full-width stat bar (Personal Leave / Holiday Leave / Total Break)
@@ -1153,32 +985,28 @@
                 const dayMin = dayWorkMin(entries);
                 entries.forEach((d, i) => {
                     rowMeta.push(d.type === "leave" ? 'leave' : 'data');
-                    let pdfCyc = "";
-                    if (d.type === "item") { const mm = d.cycleMin || 0, ss = d.cycleSec || 0; if (d.cycleTotalSec !== undefined) { if (mm > 0 || ss > 0) pdfCyc = `${mm}:${String(ss).padStart(2, '0')}`; else if (d.cycleTotalSec > 0) pdfCyc = `${d.cycleTotalSec}`; } else if (d.cycle) pdfCyc = `${d.cycle}`; }
                     const gnp = d.type === "item" ? getGoNo(d) : { go: 0, no: 0 };
                     const pdfGo = (gnp.go > 0 || gnp.no > 0) ? gnp.go : "";
                     const pdfNo = (gnp.go > 0 || gnp.no > 0) ? gnp.no : "";
-                    rows.push([i === 0 ? fmtDate(date) : "", d.name + ((d.notes || d.note) ? ` (${d.notes || d.note})` : ""), pdfCyc, d.qty || "", pdfGo, pdfNo, d.hrs || "", i === 0 ? (inT + (inT ? "-" : "") + outT) : "", i === 0 ? (dayBreak > 0 ? dayBreak : "") : "", i === 0 ? dayHrsCell(dayMin) : ""]);
+                    rows.push([i === 0 ? fmtDate(date) : "", d.name + ((d.notes || d.note) ? ` (${d.notes || d.note})` : ""), d.qty || "", pdfGo, pdfNo, d.hrs || "", i === 0 ? (inT + (inT ? "-" : "") + outT) : "", i === 0 ? (dayBreak > 0 ? dayBreak : "") : "", i === 0 ? dayHrsCell(dayMin) : ""]);
                 });
             });
             if (rows.length > 0) {
                 let pdfTotalMin = 0;
                 Object.keys(grouped).forEach(dt => { pdfTotalMin += dayWorkMin(grouped[dt]); });
                 rowMeta.push('total');
-                rows.push(['', 'Total Hours', '', '', '', '', '', '', '', fmtHM(pdfTotalMin)]);
+                rows.push(['', 'Total Hours', '', '', '', '', '', '', fmtHM(pdfTotalMin)]);
             }
-            pdfDoc.autoTable({ startY: afterSummaryY, head: [['Date', 'Description', 'Cyc(s)', 'Qty', 'Go Tight', 'No Go', 'Hrs', 'In-Out', 'Brk', 'Total Hrs']], body: rows, margin: { left: PM, right: PM }, tableWidth: CW, styles: { font: 'helvetica', fontSize: 8, halign: 'center', cellPadding: { top: 2.5, bottom: 2.5, left: 2, right: 2 }, overflow: 'hidden', textColor: [35, 35, 35], fontStyle: 'normal', lineColor: [225, 225, 225], lineWidth: 0.15 }, columnStyles: { 0: { halign: 'center', cellWidth: 22, fontStyle: 'bold' }, 1: { halign: 'left', cellWidth: 42, overflow: 'linebreak' }, 2: { cellWidth: 15 }, 3: { cellWidth: 13 }, 4: { cellWidth: 17 }, 5: { cellWidth: 14 }, 6: { cellWidth: 12 }, 7: { cellWidth: 26 }, 8: { cellWidth: 10 }, 9: { cellWidth: 19, fontStyle: 'bold' } }, headStyles: { fillColor: [235, 235, 235], textColor: [40, 40, 40], fontStyle: 'bold', halign: 'center', lineColor: [210, 210, 210], lineWidth: 0.2 }, alternateRowStyles: { fillColor: [250, 250, 250] }, didParseCell: (data) => { if (data.section === 'body' && rowMeta[data.row.index] === 'total') { data.cell.styles.fillColor = [238, 243, 251]; data.cell.styles.fontStyle = 'bold'; } if (data.section === 'body' && rowMeta[data.row.index] === 'leave') { data.cell.styles.fillColor = [242, 242, 242]; data.cell.styles.textColor = [110, 110, 110]; data.cell.styles.fontStyle = 'italic'; } } });
+            pdfDoc.autoTable({ startY: afterSummaryY, head: [['Date', 'Description', 'Qty', 'Go Tight', 'No Go', 'Hrs', 'In-Out', 'Brk', 'Total Hrs']], body: rows, margin: { left: PM, right: PM }, tableWidth: CW, styles: { font: 'helvetica', fontSize: 8, halign: 'center', cellPadding: { top: 2.5, bottom: 2.5, left: 2, right: 2 }, overflow: 'hidden', textColor: [35, 35, 35], fontStyle: 'normal', lineColor: [225, 225, 225], lineWidth: 0.15 }, columnStyles: { 0: { halign: 'center', cellWidth: 22, fontStyle: 'bold' }, 1: { halign: 'left', cellWidth: 57, overflow: 'linebreak' }, 2: { cellWidth: 13 }, 3: { cellWidth: 17 }, 4: { cellWidth: 14 }, 5: { cellWidth: 12 }, 6: { cellWidth: 26 }, 7: { cellWidth: 10 }, 8: { cellWidth: 19, fontStyle: 'bold' } }, headStyles: { fillColor: [235, 235, 235], textColor: [40, 40, 40], fontStyle: 'bold', halign: 'center', lineColor: [210, 210, 210], lineWidth: 0.2 }, alternateRowStyles: { fillColor: [250, 250, 250] }, didParseCell: (data) => { if (data.section === 'body' && rowMeta[data.row.index] === 'total') { data.cell.styles.fillColor = [238, 243, 251]; data.cell.styles.fontStyle = 'bold'; } if (data.section === 'body' && rowMeta[data.row.index] === 'leave') { data.cell.styles.fillColor = [242, 242, 242]; data.cell.styles.textColor = [110, 110, 110]; data.cell.styles.fontStyle = 'italic'; } } });
 
             /* ---- Category summary table ---- */
             const catStartY = pdfDoc.lastAutoTable.finalY + 10;
             let itemsSum = {}; let gensSum = {};
             prodData.forEach(d => {
                 if (d.type === "item") {
-                    const mm = d.cycleMin || 0, ss = d.cycleSec || 0;
-                    const cycFmt = (mm > 0 || ss > 0) ? `${mm}:${String(ss).padStart(2, '0')}` : (d.cycle ? `${d.cycle}` : '');
-                    // same item + same cycle time => one line with the total quantity
-                    const sumKey = (d.name || '').trim().toLowerCase() + '|' + cycFmt;
-                    if (!itemsSum[sumKey]) itemsSum[sumKey] = { name: d.name, cyc: cycFmt, qty: 0 };
+                    // same item => one line with the total quantity
+                    const sumKey = (d.name || '').trim().toLowerCase();
+                    if (!itemsSum[sumKey]) itemsSum[sumKey] = { name: d.name, qty: 0 };
                     itemsSum[sumKey].qty += parseFloat(d.qty || 0);
                 } else if (d.type === "general") {
                     if (!gensSum[d.name]) gensSum[d.name] = 0;
@@ -1190,35 +1018,31 @@
             prodData.forEach(d => { if (d.type === "item") { const g = getGoNo(d); goTotal += g.go; noGoTotal += g.no; } });
 
             let catRows = []; let catRowMeta = [];
-            const itemSumKeys = Object.keys(itemsSum).sort((a, b) => {
-                const nc = itemsSum[a].name.localeCompare(itemsSum[b].name);
-                if (nc !== 0) return nc;
-                return (itemsSum[a].cyc || '').localeCompare(itemsSum[b].cyc || '');
-            });
+            const itemSumKeys = Object.keys(itemsSum).sort((a, b) => itemsSum[a].name.localeCompare(itemsSum[b].name));
             const genSumKeys = Object.keys(gensSum).sort((a, b) => a.localeCompare(b));
             if (itemSumKeys.length > 0) {
-                catRowMeta.push('header'); catRows.push(['', 'Production Items', '', '']);
+                catRowMeta.push('header'); catRows.push(['', 'Production Items', '']);
                 itemSumKeys.forEach(k => {
                     catRowMeta.push('data');
-                    catRows.push(['Item', itemsSum[k].name, itemsSum[k].cyc || '', `${itemsSum[k].qty} Pcs`]);
+                    catRows.push(['Item', itemsSum[k].name, `${itemsSum[k].qty} Pcs`]);
                 });
             }
             if (genSumKeys.length > 0) {
-                catRowMeta.push('header'); catRows.push(['', 'General Work', '', '']);
+                catRowMeta.push('header'); catRows.push(['', 'General Work', '']);
                 genSumKeys.forEach(k => {
                     catRowMeta.push('data');
-                    catRows.push(['Work', k, '', `${gensSum[k].toFixed(2)} Hrs`]);
+                    catRows.push(['Work', k, gensSum[k] > 0 ? `${gensSum[k].toFixed(2)} Hrs` : '-']);
                 });
             }
             if (catRows.length > 0) {
                 pdfDoc.autoTable({
                     startY: catStartY,
-                    head: [['Category', 'Description', 'Cyc(s)', 'Qty / Hrs']],
+                    head: [['Category', 'Description', 'Qty / Hrs']],
                     body: catRows,
                     margin: { left: PM, right: PM },
                     tableWidth: CW,
                     styles: { font: 'helvetica', fontSize: 9, halign: 'center', textColor: [35, 35, 35], fontStyle: 'normal', lineColor: [225, 225, 225], lineWidth: 0.15 },
-                    columnStyles: { 0: { cellWidth: 30 }, 1: { halign: 'left', cellWidth: 106 }, 2: { halign: 'center', cellWidth: 22 }, 3: { halign: 'right', fontStyle: 'bold', cellWidth: 32 } },
+                    columnStyles: { 0: { cellWidth: 30 }, 1: { halign: 'left', cellWidth: 128 }, 2: { halign: 'right', fontStyle: 'bold', cellWidth: 32 } },
                     headStyles: { fillColor: [235, 235, 235], textColor: [40, 40, 40], fontStyle: 'bold', lineColor: [210, 210, 210], lineWidth: 0.2 },
                     alternateRowStyles: { fillColor: [250, 250, 250] },
                     didParseCell: (data) => {
@@ -1275,58 +1099,11 @@
         pdfDoc.save(`DFM_Report_${pF}_to_${pT}.pdf`);
     }
 
-    // Helper: compute date range from month/year/AB
-    function cncGetDateRange(month, year, ab) {
-        const y = parseInt(year);
-        const m = String(parseInt(month)).padStart(2, '0');
-        const lastDay = new Date(y, parseInt(month), 0).getDate();
-        if (ab === 'A') {
-            return { from: `${y}-${m}-01`, to: `${y}-${m}-15` };
-        } else if (ab === 'B') {
-            return { from: `${y}-${m}-16`, to: `${y}-${m}-${String(lastDay).padStart(2, '0')}` };
-        } else {
-            // AB = whole month
-            return { from: `${y}-${m}-01`, to: `${y}-${m}-${String(lastDay).padStart(2, '0')}` };
-        }
-    }
-
-    window.generateAdvancedPDFFromSelectors = () => {
-        const prodMonthEl = document.getElementById('pdfProdMonth');
-        const prodMonth = prodMonthEl.value;
-        const prodYear = document.getElementById('pdfProdYear').value;
-        const prodAB = document.getElementById('pdfProdAB').value;
-        const leaveMonthEl = document.getElementById('pdfLeaveMonth');
-        const leaveMonth = leaveMonthEl.value;
-        const leaveYear = document.getElementById('pdfLeaveYear').value;
-        const leaveAB = document.getElementById('pdfLeaveAB').value;
-
-        const { from: pF, to: pT } = cncGetDateRange(prodMonth, prodYear, prodAB);
-        const { from: lF, to: lT } = cncGetDateRange(leaveMonth, leaveYear, leaveAB);
-
-        // Store labels for PDF header
-        const prodMonthName = prodMonthEl.options[prodMonthEl.selectedIndex].text;
-        const leaveMonthName = leaveMonthEl.options[leaveMonthEl.selectedIndex].text;
-        window._cncPdfProdLabel  = `${prodMonthName} ${prodYear} - ${prodAB}`;
-        window._cncPdfLeaveLabel = `${leaveMonthName} ${leaveYear} - ${leaveAB}`;
-
-        // Set hidden inputs for generateAdvancedPDF to read
-        document.getElementById('pdfProdFrom').value = pF;
-        document.getElementById('pdfProdTo').value = pT;
-        document.getElementById('pdfLeaveFrom').value = lF;
-        document.getElementById('pdfLeaveTo').value = lT;
-
-        generateAdvancedPDF();
-    };
-
     window.addItemMaster = async () => {
         const n = document.getElementById('mItemName').value.trim();
         if (!n) return alert("Item નું નામ ભરો.");
-        const cMin = parseFloat(document.getElementById('mItemCycMin').value || 0);
-        const cSec = parseFloat(document.getElementById('mItemCycSec').value || 0);
-        await window.fLib.addDoc(window.fLib.collection(window.db, "items"), { name: n, cycleMin: cMin, cycleSec: cSec, cycleTotalSec: (cMin * 60) + cSec });
+        await window.fLib.addDoc(window.fLib.collection(window.db, "items"), { name: n });
         document.getElementById('mItemName').value = "";
-        document.getElementById('mItemCycMin').value = "";
-        document.getElementById('mItemCycSec').value = "";
         window.syncData();
     };
 
@@ -1343,9 +1120,6 @@
         if (!it) return;
         document.getElementById('editItemId').value = id;
         document.getElementById('editItemName').value = it.name;
-        const cp = itemCycParts(it);
-        document.getElementById('editItemCycMin').value = cp.m || "";
-        document.getElementById('editItemCycSec').value = cp.s || "";
         document.getElementById('editModal').classList.add('active');
     };
 
@@ -1355,9 +1129,7 @@
         const id = document.getElementById('editItemId').value;
         const n = document.getElementById('editItemName').value.trim();
         if (!n) return alert("નામ ભરો.");
-        const cMin = parseFloat(document.getElementById('editItemCycMin').value || 0);
-        const cSec = parseFloat(document.getElementById('editItemCycSec').value || 0);
-        await window.fLib.updateDoc(window.fLib.doc(window.db, "items", id), { name: n, cycleMin: cMin, cycleSec: cSec, cycleTotalSec: (cMin * 60) + cSec });
+        await window.fLib.updateDoc(window.fLib.doc(window.db, "items", id), { name: n });
         closeEditModal();
         window.syncData();
     };
@@ -1393,15 +1165,6 @@
         const g = document.getElementById('editGoQty').value, n = document.getElementById('editNoGoQty').value;
         if (g === '' && n === '') return;
         document.getElementById('editItemQty').value = (parseFloat(g) || 0) + (parseFloat(n) || 0);
-    };
-
-    window.calcEditCycle = () => {
-        const mins = parseFloat(document.getElementById('editCycleMin').value || 0);
-        const secs = parseFloat(document.getElementById('editCycleSec').value || 0);
-        const tot = (mins * 60) + secs;
-        const prev = document.getElementById('editCyclePreview');
-        prev.style.display = tot > 0 ? 'block' : 'none';
-        if (tot > 0) { const mPart = mins > 0 ? `${mins}m ` : ''; prev.textContent = `⏱ ${mPart}${secs}s = ${tot}s`; }
     };
 
     window.ssShowEditGen = () => { ssFilterEditGen(); };
@@ -1443,14 +1206,11 @@
         if (e.type === 'item') {
             document.getElementById('editItemSection').style.display = 'block';
             document.getElementById('editEntryItemName').value = e.name || '';
-            document.getElementById('editCycleMin').value = e.cycleMin || 0;
-            document.getElementById('editCycleSec').value = e.cycleSec || 0;
             document.getElementById('editItemQty').value = e.qty || 0;
             const gnE = getGoNo(e);
             document.getElementById('editGoQty').value = (gnE.go > 0 || gnE.no > 0) ? gnE.go : '';
             document.getElementById('editNoGoQty').value = (gnE.go > 0 || gnE.no > 0) ? gnE.no : '';
             document.getElementById('editItemNotes').value = e.notes || '';
-            calcEditCycle();
         } else if (e.type === 'general') {
             document.getElementById('editGenSection').style.display = 'block';
             document.getElementById('editGenWorkName').value = e.name || '';
@@ -1476,20 +1236,17 @@
         let u = { date, inTime, outTime };
         if (type === 'item') {
             const itemName = document.getElementById('editEntryItemName').value;
-            const mins = parseFloat(document.getElementById('editCycleMin').value || 0);
-            const secs = parseFloat(document.getElementById('editCycleSec').value || 0);
-            const tot = (mins * 60) + secs;
             const qty = parseFloat(document.getElementById('editItemQty').value || 0);
             const notes = document.getElementById('editItemNotes').value.trim();
             const goQty = parseFloat(document.getElementById('editGoQty').value || 0);
             const noGoQty = parseFloat(document.getElementById('editNoGoQty').value || 0);
-            u = { ...u, name: itemName, cycleMin: mins, cycleSec: secs, cycleTotalSec: tot, qty, goQty, noGoQty, goType: '', notes, amt: 0, type: 'item' };
+            u = { ...u, name: itemName, qty, goQty, noGoQty, goType: '', notes, amt: 0, type: 'item' };
         } else if (type === 'general') {
             const genName = document.getElementById('editGenWorkName').value;
-            const h = parseFloat(document.getElementById('editGenHrs').value || 0);
+            const h = parseFloat(document.getElementById('editGenHrs').value) || 0;
             const notes = document.getElementById('editGenNotes').value.trim();
             const amt = parseFloat((h * GEN_RATE).toFixed(2));
-            u = { ...u, name: genName, hrs: parseFloat(h.toFixed(4)), hrsDisplay: `${h}hr`, notes, amt, type: 'general' };
+            u = { ...u, name: genName, hrs: parseFloat(h.toFixed(4)), hrsDisplay: h > 0 ? `${h}hr` : '', notes, amt, type: 'general' };
         } else if (type === 'leave') {
             const leaveName = document.getElementById('editLeaveSel').value;
             u = { ...u, name: leaveName, type: 'leave', amt: 0 };
